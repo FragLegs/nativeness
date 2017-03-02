@@ -14,7 +14,7 @@ setuptools.setup(
     install_requires=[
         'dill==0.2.6',
         'pandas==0.19.2',
-        'tensorflow==1.0.0'
-
+        'tensorflow==1.0.0',
+        'scipy==0.18.1'
     ]
 )

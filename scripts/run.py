@@ -6,7 +6,8 @@ import os
 import pandas as pd
 
 import nativeness.models.base
-import nativeness.models.baseline
+# import nativeness.models.baseline
+import nativeness.models.majority
 import nativeness.utils.data as data
 import nativeness.utils.metrics as metrics
 
@@ -28,7 +29,7 @@ def main(**kwargs):
 
     # create model
     model_types = {
-        'baseline': nativeness.models.baseline.Baseline(config),
+        # 'baseline': nativeness.models.baseline.Baseline(config),
         'majority': nativeness.models.majority.Majority(config)
     }
     model = model_types[config.model_type]

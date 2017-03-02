@@ -128,4 +128,4 @@ def _save_json(path, obj):
 
 
 def _save_csv(path, obj):
-    obj.to_csv(path, encoing='utf8', index=True)
+    obj.to_csv(path, encoding='utf8', index=True)
