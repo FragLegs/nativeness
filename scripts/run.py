@@ -75,11 +75,11 @@ def main(**kwargs):
     metrics.show(m)
 
     # save metrics
-    data.save(config.output_path, m, 'metrics', as_type='json')
+    data.save(config.results_path, m, 'metrics', as_type='json')
 
     # save predictions
     test_data['preds'] = preds
-    data.save(config.output_path, test_data, 'preds.csv', as_type='csv')
+    data.save(config.results_path, test_data, 'preds.csv', as_type='csv')
 
 
 def parse_args():
