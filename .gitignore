@@ -1,0 +1,20 @@
+.autotag_version
+*.pyc
+*.swp
+*.egg-info/
+.anaconda
+.cache
+# Explicitly ignore these to keep them secret
+#
+codeship.aes
+dockercfg
+codeship.env
+aws_ecr.env
+
+dist
+.coverage
+.idea/*
+coverage_html_report*
+
+*.decrypted
+
