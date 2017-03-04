@@ -7,6 +7,7 @@ import pandas as pd
 
 import nativeness.models.base
 # import nativeness.models.baseline
+import nativeness.models.logistic
 import nativeness.models.majority
 import nativeness.utils.data as data
 import nativeness.utils.metrics as metrics
@@ -27,12 +28,17 @@ def main(**kwargs):
     # set up config
     config = nativeness.models.base.Config(**kwargs)
 
-    # create model
-    model_types = {
-        # 'baseline': nativeness.models.baseline.Baseline(config),
-        'majority': nativeness.models.majority.Majority(config)
-    }
-    model = model_types[config.model_type]
+    if config.reload is not None:
+        model = data.load(config.reload, as_type='pickle')
+    else:
+        # create model
+        model_types = {
+            # 'baseline': nativeness.models.baseline.Baseline,
+            'majority': nativeness.models.majority.Majority,
+            'logistic': nativeness.models.logistic.Logistic,
+            'logistic_windows': nativeness.models.logistic.LogisticWindows,
+        }
+        model = model_types[config.model_type](config)
 
     # load training data
     train_data = data.load(os.path.join(config.input_path, 'train.csv'))
@@ -59,17 +65,31 @@ def main(**kwargs):
             ]
         )
 
+    log.debug('Training {} model'.format(config.model_type))
+
     # train model
     model.train(train_data, dev_data)
+
+    log.debug('Saving the model')
+
+    # save the model
+    data.save(config.results_path, model, 'model', as_type='pickle')
 
     # load test data
     test_data = data.load(os.path.join(config.input_path, 'test.csv'))
 
+    log.debug('Predicting on test data')
+
     # get predictions
-    preds = model.predict(test_data.text.values)
+    preds = [
+        model.predict(nativeness.utils.text.windows(essay))
+        for essay in test_data.text.values
+    ]
 
     # calculate metrics
-    m = metrics.calculate(test_data.non_native.values, preds)
+    m = metrics.calculate(
+        test_data.non_native.values, preds, test_data.text.values
+    )
 
     # print metrics
     metrics.show(m)
@@ -80,6 +100,12 @@ def main(**kwargs):
     # save predictions
     test_data['preds'] = preds
     data.save(config.results_path, test_data, 'preds.csv', as_type='csv')
+
+    # plot the PR curve and save it
+    plot_path = os.path.join(config.results_path, 'pr_curve.png')
+    metrics.plot(
+        test_data.non_native.values, preds, config.model_type, plot_path
+    )
 
 
 def parse_args():
@@ -126,6 +152,15 @@ def parse_args():
         '--debug',
         action='store_true',
         help=debug_help
+    )
+
+    reload_help = 'Reload a saved model'
+    parser.add_argument(
+        '-r',
+        '--reload',
+        type=str,
+        default=None,
+        help=reload_help
     )
 
     verbosity_help = 'Verbosity level (default: %(default)s)'

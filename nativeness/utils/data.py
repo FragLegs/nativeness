@@ -10,24 +10,78 @@ import pandas as pd
 log = logging.getLogger(name=__name__)
 
 
-def load(path):
+def load(path, as_type='csv'):
     """
     Loads the data
 
     Parameters
     ----------
     path : str
-        Location of a csv on disk
+        Location of data on disk
+    as_type : str
+        One of: pickle, json, csv
 
     Returns
     -------
-    pandas DataFrame
-        the data set
+    loaded object
     """
-    df = pd.read_csv(path, encoding='utf8', index_col=0)
+    # load the particular type of object
+    loaders = {
+        'pickle': _load_pickle,
+        'json': _load_json,
+        'csv': _load_csv
+    }
+    return loaders[as_type](path)
 
-    return df
 
+def _load_csv(path):
+    """
+    Loads the data
+
+    Parameters
+    ----------
+    path : str
+        Location of data on disk
+
+    Returns
+    -------
+    DataFrame
+    """
+    return pd.read_csv(path, encoding='utf8', index_col=0)
+
+
+def _load_pickle(path):
+    """
+    Loads the data
+
+    Parameters
+    ----------
+    path : str
+        Location of data on disk
+
+    Returns
+    -------
+    obj
+    """
+    with open(path, 'r') as fin:
+        return pickle.load(fin)
+
+
+def _load_json(path):
+    """
+    Loads the data
+
+    Parameters
+    ----------
+    path : str
+        Location of data on disk
+
+    Returns
+    -------
+    obj
+    """
+    with open(path, 'r') as fin:
+        return json.load(fin)
 
 def to_ints(essay):
     """

@@ -10,16 +10,22 @@ log = logging.getLogger(name=__name__)
 
 class Config(object):
     def __init__(self, **kwargs):
+        self.n_epochs = 20
+        self.batch_size = 200
+
         # add all keyword arguments to namespace
         self.__dict__.update(kwargs)
 
-        # get a timestamp
-        time = '{:%Y%m%d_%H%M%S}'.format(datetime.now())
+        if self.reload is not None:
+            self.results_path = os.path.split(self.reload)[0]
+        else:
+            # get a timestamp
+            time = '{:%Y%m%d_%H%M%S}'.format(datetime.now())
 
-        # results_path = output_path/model_type/time
-        self.results_path = os.path.join(
-            self.output_path, self.model_type, time
-        )
+            # results_path = output_path/model_type/time
+            self.results_path = os.path.join(
+                self.output_path, self.model_type, time
+            )
 
         # make sure the path exists
         try:

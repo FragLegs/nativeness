@@ -15,6 +15,7 @@ setuptools.setup(
         'dill==0.2.6',
         'pandas==0.19.2',
         'tensorflow==1.0.0',
-        'scipy==0.18.1'
+        'scipy==0.18.1',
+        'matplotlib==2.0.0'
     ]
 )
