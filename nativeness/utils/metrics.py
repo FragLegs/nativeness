@@ -47,18 +47,16 @@ def pearsonr(truth, preds):
     return scipy.stats.pearsonr(truth, preds)[0]
 
 
-def calculate(truth, preds, essays):
+def calculate(df, preds):
     """
     Calcuates a dictionary of metrics
 
     Parameters
     ----------
-    truth : iterable of bool
-        True == non-native
+    df : DataFrame
+        True data
     preds : iterable of float
         Probability that each instance is non-native
-    essays : iterable of str
-        The essays
 
     Returns
     -------
@@ -66,9 +64,8 @@ def calculate(truth, preds, essays):
         Calculated matrics
     """
     ret = {}
-    ret['AUC'] = auc(truth, preds)
-
-    ret['length_corr'] = pearsonr(preds, map(len, essays))
+    ret['AUC'] = auc(df.non_native.values, preds)
+    ret['length_corr'] = pearsonr(preds, df.text.str.len().values)
 
     return ret
 

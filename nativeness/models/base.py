@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-import abc
+from datetime import datetime
 import logging
 import os
-from datetime import datetime
+import random
+
+import numpy as np
 
 
 log = logging.getLogger(name=__name__)
@@ -10,8 +12,18 @@ log = logging.getLogger(name=__name__)
 
 class Config(object):
     def __init__(self, **kwargs):
-        self.n_epochs = 20
-        self.batch_size = 200
+        self.n_epochs = 5
+        self.learning_rate = 0.001
+        self.embed_size = 50
+        self.hidden_size = 150
+        self.vocab_size = 126 - 31  # the printable ascii characters
+
+        self.window_size = 100
+        self.window_stride = 1
+
+        self.ngram_size = 4
+
+        self.random_seed = 42
 
         # add all keyword arguments to namespace
         self.__dict__.update(kwargs)
@@ -35,41 +47,48 @@ class Config(object):
 
         log.debug('Recording results at {}'.format(self.results_path))
 
+        # set the random seed
+        random.seed(self.random_seed)
+        np.random.seed(self.random_seed)
+
 
 class NativenessModel(object):
     """
     Base class for all models
     """
-    __metaclass__ = abc.ABCMeta
-
     def __init__(self, config):
         self.config = config
 
-    @abc.abstractmethod
-    def train(self, train_data, dev_data):
+    def train(self, train_generator, dev_generator):
         """
-        Calls the model's `_train()` class
+        Train the logistic regression model with train and dev data
 
         Parameters
         ----------
-        train_data : DataFrame
-            The training data
-
-        dev_data : DataFrame
-            The development data
-        """
-
-    @abc.abstractmethod
-    def predict(self, essays):
-        """
-        Uses the model to predict on data
-
-        Parameters
-        ----------
-        essays : iterable of str
-            The essays to predict on
+        train_generator : nativeness.utils.data.WindowGenerator
+            An object that can generate training windows
+        dev_generator : nativeness.utils.data.WindowGenerator
+            An object that can generate dev windows
 
         Returns
         -------
-        List of probabilities, one per row in the data set
+        iterable of float
+            Dev predictions
         """
+        raise NotImplementedError('Must implement train()')
+
+    def predict(self, test_generator):
+        """
+        Predict the probability that essays were written by ELL students
+
+        Parameters
+        ----------
+        test_generator : nativeness.utils.data.WindowGenerator
+            An object that can generate test window
+
+        Returns
+        -------
+        iterable of float
+            Dev predictions
+        """
+        raise NotImplementedError('Must implement predict()')
