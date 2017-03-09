@@ -45,8 +45,13 @@ class BiLSTMPool(NativeNN):
             shape=(None, ),  # one length per window
             name='seq_len'
         )
+        self.keep_prob_placeholder = tf.placeholder(
+            tf.float32,
+            shape=(),
+            name='keep_prob'
+        )
 
-    def create_feed_dict(self, inputs_batch, labels_batch=None):
+    def create_feed_dict(self, inputs_batch, labels_batch=None, keep_prob=1.0):
         """
         Creates the feed_dict for one step of training.
 
@@ -77,7 +82,8 @@ class BiLSTMPool(NativeNN):
             self.sequence_length: np.repeat(
                 [self.config.window_size],
                 inputs_batch.shape[0]
-            )
+            ),
+            self.keep_prob_placeholder: keep_prob
         }
 
         if labels_batch is not None:
@@ -100,7 +106,10 @@ class BiLSTMPool(NativeNN):
         )
 
         # features should be (None, window_size, embed_size)
-        return tf.nn.embedding_lookup(vocab, self.input_placeholder)
+        embeddings = tf.nn.embedding_lookup(vocab, self.input_placeholder)
+
+        # add dropout
+        return tf.nn.dropout(embeddings, self.keep_prob_placeholder)
 
     def add_window_prediction_op(self, embeddings):
         """
@@ -137,6 +146,10 @@ class BiLSTMPool(NativeNN):
             shape=(-1, self.config.rnn_output_size * 2)
         )
 
+        dropped_output = tf.nn.dropout(
+            final_output, self.keep_prob_placeholder
+        )
+
         # add an affine layer
         W = tf.Variable(
             initial_value=tf.contrib.layers.xavier_initializer()((
@@ -150,7 +163,7 @@ class BiLSTMPool(NativeNN):
         )
 
         # predict on the output
-        return tf.sigmoid(tf.matmul(final_output, W) + b)
+        return tf.sigmoid(tf.matmul(dropped_output, W) + b)
 
     def add_loss_op(self, pred):
         """Adds Ops for the loss function to the computational graph.

@@ -18,6 +18,7 @@ class Config(object):
         self.hidden_size = 64
         self.rnn_output_size = self.hidden_size
         self.vocab_size = 126 - 31  # the printable ascii characters
+        self.keep_prob = 0.75
 
         self.window_size = 100
         self.window_stride = 1

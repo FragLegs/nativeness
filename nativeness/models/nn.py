@@ -31,7 +31,7 @@ class NativeNN(NativenessModel):
         """
         raise NotImplementedError("Each Model must re-implement this method.")
 
-    def create_feed_dict(self, inputs_batch, labels_batch=None):
+    def create_feed_dict(self, inputs_batch, labels_batch=None, keep_prob=1.0):
         """
         Creates the feed_dict for one step of training.
 
@@ -125,7 +125,11 @@ class NativeNN(NativenessModel):
         Returns:
             loss: loss over the batch (a scalar)
         """
-        feed = self.create_feed_dict(inputs_batch, labels_batch=labels_batch)
+        feed = self.create_feed_dict(
+            inputs_batch,
+            labels_batch=labels_batch,
+            keep_prob=self.config.keep_prob
+        )
         _, loss = sess.run([self.train_op, self.loss], feed_dict=feed)
         return loss
 
@@ -141,7 +145,7 @@ class NativeNN(NativenessModel):
             prediction: float
             window_preds : A 1-d array (batch_size, )
         """
-        feed = self.create_feed_dict(inputs_batch)
+        feed = self.create_feed_dict(inputs_batch, keep_prob=1.0)
         prediction, window_preds = sess.run(
             [self.pred, self.window_preds], feed_dict=feed
         )
