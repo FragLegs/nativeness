@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
 import logging
-import math
 import os
 import SimpleHTTPServer
 import threading
@@ -38,6 +37,7 @@ def main(input_path, results_path, serve, **kwargs):
     window_size = window_data['size']
     window_stride = window_data['stride']
     window_preds = window_data['preds']
+    used_max = window_data['used_max']
 
     # load the essays
     log.debug('Loading essays')
@@ -70,7 +70,7 @@ def main(input_path, results_path, serve, **kwargs):
 
         # calculate character intensities
         char_intensities = calculate_intensities(
-            window_preds[i], window_size, window_stride
+            window_preds[i], window_size, window_stride, used_max
         )
 
         title = '{}<br><br>non-native = {}<br>P(non-native) = {}'.format(
@@ -100,7 +100,7 @@ def main(input_path, results_path, serve, **kwargs):
         print('HTML written to {}'.format(html_path))
 
 
-def calculate_intensities(preds, size, stride):
+def calculate_intensities(preds, size, stride, used_max):
     """
     Averages windows per character
 
@@ -112,6 +112,9 @@ def calculate_intensities(preds, size, stride):
         How big each window is
     stride : int
         How many characters between each window
+    used_max : bool
+        If the model used the maximum window prediction, then we only want
+        to visualize that window
 
     Returns
     -------
@@ -123,12 +126,17 @@ def calculate_intensities(preds, size, stride):
     values = np.zeros(essay_length, dtype=np.float)
     counts = np.zeros(essay_length, dtype=np.float)
 
-    for i, pred in enumerate(preds):
-        start = i * stride
-        values[start: start + size] += pred
-        counts[start: start + size] += 1
+    if used_max:
+        max_arg = np.argmax(preds)
+        start = max_arg * stride
+        values[start: start + size] = preds[max_arg]
+    else:
+        for i, pred in enumerate(preds):
+            start = i * stride
+            values[start: start + size] += pred
+            counts[start: start + size] += 1
 
-    values = values / counts
+        values = values / counts
 
     return [(i, i + 1, v) for i, v in enumerate(values)]
 

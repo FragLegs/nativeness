@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+"""
+This module is not original work.
+It is modified from a set of tools that we use at Turnitin.
+"""
 import cgi
 import logging
 import math

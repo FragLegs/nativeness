@@ -28,7 +28,7 @@ class BiLSTMPool(NativeNN):
         tensorflow.org/versions/r0.7/api_docs/python/io_ops.html#placeholders
         """
         self.input_placeholder = tf.placeholder(
-            tf.uint8,
+            tf.int32,
             shape=(
                 None,  # batch size
                 self.config.window_size,  # 100
@@ -39,6 +39,11 @@ class BiLSTMPool(NativeNN):
             tf.bool,
             shape=(1, 1),  # we train one doc at a time, w/ a batch of windows
             name='y'
+        )
+        self.sequence_length = tf.placeholder(
+            tf.int32,
+            shape=(None, ),  # one length per window
+            name='seq_len'
         )
 
     def create_feed_dict(self, inputs_batch, labels_batch=None):
@@ -68,7 +73,11 @@ class BiLSTMPool(NativeNN):
             The feed dictionary mapping from placeholders to values.
         """
         feed_dict = {
-            self.input_placeholder: inputs_batch
+            self.input_placeholder: inputs_batch,
+            self.sequence_length: np.repeat(
+                [self.config.window_size],
+                inputs_batch.shape[0]
+            )
         }
 
         if labels_batch is not None:
@@ -76,7 +85,7 @@ class BiLSTMPool(NativeNN):
 
         return feed_dict
 
-    def add_embedding(self):
+    def add_embeddings(self):
         """
         Adds an embedding layer
         Returns
@@ -105,27 +114,33 @@ class BiLSTMPool(NativeNN):
         """
         # add a forward lstm cell
         lstm_fw = tf.nn.rnn_cell.BasicLSTMCell(self.config.hidden_size)
-        lstm_fw.output_size
 
         # add a backwards lstm cell
         lstm_bw = tf.nn.rnn_cell.BasicLSTMCell(self.config.hidden_size)
 
         # add a bidirectional LSTM
         outputs, _ = tf.nn.bidirectional_dynamic_rnn(
-            lstm_fw, lstm_bw, embeddings
+            cell_fw=lstm_fw,
+            cell_bw=lstm_bw,
+            inputs=embeddings,
+            dtype=tf.float32,
+            sequence_length=self.sequence_length
         )
 
         # concat the outputs and take the final output
-        final_output = tf.slice(
-            tf.concat(outputs, 2),
-            [0, self.config.window_size - 1, 0],
-            [-1, 1, -1]
+        final_output = tf.reshape(
+            tf.slice(
+                tf.concat(2, outputs),
+                [0, self.config.window_size - 1, 0],
+                [-1, 1, -1]
+            ),
+            shape=(-1, self.config.rnn_output_size * 2)
         )
 
         # add an affine layer
         W = tf.Variable(
             initial_value=tf.contrib.layers.xavier_initializer()((
-                self.config.output_size, 1
+                self.config.hidden_size * 2, 1
             )),
             name='W'
         )
@@ -137,23 +152,6 @@ class BiLSTMPool(NativeNN):
         # predict on the output
         return tf.sigmoid(tf.matmul(final_output, W) + b)
 
-    def add_prediction_op(self, window_preds):
-        """
-        Average the windows
-
-        Parameters
-        ----------
-        window_preds : A 1-d tensor (batch_size, )
-             The window predictions for this document
-
-        Returns
-        -------
-        A 0-d tensor (scalar)
-            The document prediction
-        """
-        # average the result of the batch
-        return tf.reduce_mean(window_preds)
-
     def add_loss_op(self, pred):
         """Adds Ops for the loss function to the computational graph.
 
@@ -163,7 +161,7 @@ class BiLSTMPool(NativeNN):
             loss: A 0-d tensor (scalar) output
         """
         # compute the log loss
-        return tf.losses.log_loss(self.labels_placeholder, pred)
+        return tf.contrib.losses.log_loss(self.labels_placeholder, pred)
 
     def add_training_op(self, loss):
         """Sets up the training Ops.
@@ -186,3 +184,39 @@ class BiLSTMPool(NativeNN):
             learning_rate=self.config.learning_rate
         )
         return optimizer.minimize(loss=loss)
+
+
+class BiLSTMPoolAvg(BiLSTMPool):
+    def add_prediction_op(self, window_preds):
+        """
+        Turn window preds into document preds by averaging
+
+        Parameters
+        ----------
+        window_preds : A 1-d tensor (batch_size, )
+             The window predictions for this document
+
+        Returns
+        -------
+        A 0-d tensor (scalar)
+            The document prediction
+        """
+        return tf.reshape(tf.reduce_mean(window_preds), (1, 1))
+
+
+class BiLSTMPoolMax(BiLSTMPool):
+    def add_prediction_op(self, window_preds):
+        """
+        Turn window preds into document preds by averaging
+
+        Parameters
+        ----------
+        window_preds : A 1-d tensor (batch_size, )
+             The window predictions for this document
+
+        Returns
+        -------
+        A 0-d tensor (scalar)
+            The document prediction
+        """
+        return tf.reshape(tf.reduce_max(window_preds), (1, 1))

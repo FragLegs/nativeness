@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import os
 
 import numpy as np
 from sklearn.feature_extraction.text import HashingVectorizer
@@ -7,6 +8,7 @@ import sklearn.linear_model
 import sklearn.pipeline
 
 from nativeness.models.base import NativenessModel
+import nativeness.utils.data
 import nativeness.utils.metrics
 import nativeness.utils.progress
 import nativeness.utils.text
@@ -15,12 +17,10 @@ log = logging.getLogger(name=__name__)
 
 
 class Logistic(NativenessModel):
-    # @profile
     def ngrams(self, window):
         n = self.config.ngram_size
         return [window[i:i + n] for i in range(len(window) - n + 1)]
 
-    # @profile
     def train(self, train_generator, dev_generator):
         """
         Train the logistic regression model with train and dev data
@@ -37,7 +37,7 @@ class Logistic(NativenessModel):
         iterable of float
             Dev predictions
         """
-        if hasattr(self, 'model'):
+        if hasattr(self, 'classifier'):
             return
 
         # set up feature extractor
@@ -55,14 +55,13 @@ class Logistic(NativenessModel):
             prog.update(i)
 
         best_auc = -np.inf
-        best_model = None
         best_preds = None
 
         # fit a model on train
         log.debug('Fitting')
-        model = sklearn.linear_model.SGDClassifier(loss='log')
+        classifier = sklearn.linear_model.SGDClassifier(loss='log')
 
-        essays_per_epoch = 1000
+        max_essays_per_epoch = self.config.max_essays_per_epoch
 
         for epoch in range(self.config.n_epochs):
             log.debug('Epoch {}'.format(epoch))
@@ -70,7 +69,7 @@ class Logistic(NativenessModel):
             log.debug('Training SGD')
 
             train_prog = nativeness.utils.progress.Progbar(
-                target=essays_per_epoch
+                target=max_essays_per_epoch
             )
 
             i = 0
@@ -78,9 +77,9 @@ class Logistic(NativenessModel):
                 i += 1
                 X = self.extractor.transform(windows)
                 y = np.repeat([label], X.shape[0])
-                model.partial_fit(X, y, classes=[0, 1])
+                classifier.partial_fit(X, y, classes=[0, 1])
                 train_prog.update(i)
-                if i >= essays_per_epoch:
+                if i >= max_essays_per_epoch:
                     break
 
             log.debug('Testing against dev')
@@ -92,7 +91,7 @@ class Logistic(NativenessModel):
             for dev_X, label in dev:
                 i += 1
                 dev_y.append(label)
-                preds = model.predict_proba(dev_X)
+                preds = classifier.predict_proba(dev_X)
                 dev_preds.append(self.w2d(preds[:, 1].ravel()))
                 dev_prog.update(i)
             dev_preds = np.asarray(dev_preds)
@@ -105,17 +104,17 @@ class Logistic(NativenessModel):
             if auc > best_auc:
                 log.info('New best AUC found! {0:0.2f}'.format(auc))
                 best_auc = auc
-                best_model = model
+                self.classifier = classifier
                 best_preds = dev_preds
+                self.save_model()
             else:
                 log.debug('Not the best. {0:0.2f}'.format(auc))
 
-        self.model = best_model
         return best_preds
 
     def w2d(self, window_preds):
         """
-        Combine window predictions into a document prediction by averaging them
+        Combine window predictions into a document prediction
 
         Parameters
         ----------
@@ -127,6 +126,9 @@ class Logistic(NativenessModel):
         float
             The document prediction
         """
+        raise NotImplementedError(
+            'Logistic models must implement this function'
+        )
         return window_preds.mean()
 
     def predict(self, test_generator):
@@ -152,10 +154,68 @@ class Logistic(NativenessModel):
         for windows, _, _ in test_generator(no_ints=True):
             i += 1
             X = self.extractor.transform(windows)
-            window_preds.append(self.model.predict_proba(X)[:, 1].ravel())
+            window_preds.append(self.classifier.predict_proba(X)[:, 1].ravel())
             preds.append(self.w2d(window_preds[-1]))
             test_prog.update(i)
 
         preds = np.array(preds)
 
         return preds, window_preds
+
+    def save_model(self):
+        pipeline = {
+            'classifier': self.classifier,
+            'extractor': self.extractor
+        }
+        nativeness.utils.data.save(
+            self.config.results_path,
+            pipeline,
+            'model.pipeline',
+            as_type='pickle'
+        )
+
+    def load(self, weights_path):
+        pipeline = nativeness.utils.data.load(
+            os.path.join(self.config.results_path, 'model.pipeline'),
+            as_type='pickle'
+        )
+        self.extractor = pipeline['extractor']
+        self.classifier = pipeline['classifier']
+
+
+class LogisticAvg(Logistic):
+    def w2d(self, window_preds):
+        """
+        Combine window predictions into a document prediction
+        by taking the average
+
+        Parameters
+        ----------
+        window_preds : iterable of float
+            The predictions for the individual windows
+
+        Returns
+        -------
+        float
+            The document prediction
+        """
+        return window_preds.mean()
+
+
+class LogisticMax(Logistic):
+    def w2d(self, window_preds):
+        """
+        Combine window predictions into a document prediction
+        by taking the average
+
+        Parameters
+        ----------
+        window_preds : iterable of float
+            The predictions for the individual windows
+
+        Returns
+        -------
+        float
+            The document prediction
+        """
+        return window_preds.max()

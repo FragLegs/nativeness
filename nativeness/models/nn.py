@@ -59,23 +59,29 @@ class NativeNN(NativenessModel):
         """
         raise NotImplementedError("Each Model must re-implement this method.")
 
-    def add_window_prediction_op(self):
+    def add_window_prediction_op(self, embeddings):
         """
         Implements the core of the model that transforms a batch of input
         data into predictions.
 
         Returns:
-            pred: A tensor of shape (batch_size, n_classes)
+            pred: A tensor of shape (batch_size, )
         """
         raise NotImplementedError("Each Model must re-implement this method.")
 
-    def add_prediction_op(self):
+    def add_prediction_op(self, window_preds):
         """
-        Implements the core of the model that transforms a batch of input
-        data into predictions.
+        Turn window preds into document preds
 
-        Returns:
-            pred: A tensor of shape (batch_size, n_classes)
+        Parameters
+        ----------
+        window_preds : A 1-d tensor (batch_size, )
+             The window predictions for this document
+
+        Returns
+        -------
+        A 0-d tensor (scalar)
+            The document prediction
         """
         raise NotImplementedError("Each Model must re-implement this method.")
 
@@ -132,14 +138,14 @@ class NativeNN(NativenessModel):
         Returns
         -------
         tuple
-            prediction: A 0-d tensor (scalar)
-            window_preds : A 1-d tensor (batch_size, )
+            prediction: float
+            window_preds : A 1-d array (batch_size, )
         """
         feed = self.create_feed_dict(inputs_batch)
         prediction, window_preds = sess.run(
             [self.pred, self.window_preds], feed_dict=feed
         )
-        return prediction, window_preds
+        return prediction.ravel()[0], window_preds.ravel()
 
     def build(self):
         self.add_placeholders()
@@ -154,19 +160,26 @@ class NativeNN(NativenessModel):
         Run a single epoch
         """
         # set up the progress bar
-        prog = nativeness.utils.progress.ProgBar(target=train_generator.size())
+        prog = nativeness.utils.progress.Progbar(
+            target=min(
+                self.config.max_essays_per_epoch,
+                train_generator.size()
+            )
+        )
         i = 0
 
         # train
         for windows, label, prompt_id in train_generator():
             i += 1
-            loss = self.train_on_batch(sess, np.array(windows), label)
+            loss = self.train_on_batch(sess, np.array(windows), [[label]])
             prog.update(i, [('loss', loss)])
+            if i >= self.config.max_essays_per_epoch:
+                break
 
         log.debug('Predicting on dev')
 
         # set up the progress bar
-        prog = nativeness.utils.progress.ProgBar(target=dev_generator.size())
+        prog = nativeness.utils.progress.Progbar(target=dev_generator.size())
         i = 0
 
         # train
@@ -175,7 +188,8 @@ class NativeNN(NativenessModel):
         for windows, label, prompt_id in dev_generator():
             i += 1
             truth.append(label)
-            preds.append(self.predict_on_batch(sess, np.array(windows)))
+            pred, _ = self.predict_on_batch(sess, np.array(windows))
+            preds.append(pred)
             prog.update(i)
 
         truth = np.array(truth)
@@ -184,7 +198,7 @@ class NativeNN(NativenessModel):
         auc = nativeness.utils.metrics.auc(truth, preds)
         return auc, preds
 
-    def train(self, sess, train_generator, dev_generator):
+    def train(self, train_generator, dev_generator):
         """
         Uses the neural net to learn to predict whether an essay was written
         by a non-native speaker.
@@ -222,24 +236,28 @@ class NativeNN(NativenessModel):
             saver = tf.train.Saver()
 
             # set up a session
-            with tf.Session() as session:
+            session_config = (
+                tf.ConfigProto(log_device_placement=True)
+                if self.config.log_device else None
+            )
+            with tf.Session(config=session_config) as session:
                 session.run(init)
 
                 for e in range(self.config.n_epochs):
                     log.info('Epoch {}'.format(e))
                     auc, preds = self.run_epoch(
-                        sess, train_generator, dev_generator
+                        session, train_generator, dev_generator
                     )
 
                     if auc > best_auc:
                         log.info('New best AUC found! {0:0.2f}'.format(auc))
                         best_auc = auc
                         best_preds = preds
-                        if saver:
-                            model_path = os.path.join(
-                                self.config.results_path, 'model.weights'
-                            )
-                            log.info('Saving model at {}'.format(model_path))
+                        model_path = os.path.join(
+                            self.config.results_path, 'model.weights'
+                        )
+                        log.info('Saving model at {}'.format(model_path))
+                        saver.save(session, model_path)
                     else:
                         log.debug('Not the best. {0:0.2f}'.format(auc))
 
@@ -256,18 +274,40 @@ class NativeNN(NativenessModel):
 
         Returns
         -------
-        iterable of float
-            Dev predictions
+        tuple
+            iterable of float : predicitons
+            iterable of iterable of float : window predictions
         """
         with tf.Graph().as_default():
+            self.build()
+            init = tf.global_variables_initializer()
             saver = tf.train.Saver()
-            with tf.Session() as session:
+            session_config = (
+                tf.ConfigProto(log_device_placement=True)
+                if self.config.log_device else None
+            )
+            with tf.Session(config=session_config) as session:
+                session.run(init)
                 model_path = os.path.join(
                     self.config.results_path, 'model.weights'
                 )
                 saver.restore(session, model_path)
 
-                return np.array([
-                    self.predict_on_batch(session, np.array(windows))
-                    for windows, _, _ in test_generator()
-                ])
+                prog = nativeness.utils.progress.Progbar(
+                    target=test_generator.size()
+                )
+                i = 0
+
+                preds = []
+                window_preds = []
+                for windows, _, _ in test_generator():
+                    i += 1
+                    pred, wp = self.predict_on_batch(
+                        session, np.array(windows)
+                    )
+                    preds.append(pred)
+                    window_preds.append(wp)
+                    prog.update(i)
+
+                preds = np.array(preds)
+                return preds, window_preds

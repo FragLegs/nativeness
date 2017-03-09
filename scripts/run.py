@@ -8,12 +8,20 @@ import numpy as np
 import nativeness.models.base
 import nativeness.models.logistic
 import nativeness.models.majority
+import nativeness.models.pool
 import nativeness.utils.data as data
 import nativeness.utils.metrics as metrics
 import nativeness.utils.progress
 
 
 log = logging.getLogger(name=__name__)
+MODEL_TYPES = {
+    'majority': nativeness.models.majority.Majority,
+    'logistic_avg': nativeness.models.logistic.LogisticAvg,
+    'logistic_max': nativeness.models.logistic.LogisticMax,
+    'pool_avg': nativeness.models.pool.BiLSTMPoolAvg,
+    'pool_max': nativeness.models.pool.BiLSTMPoolMax,
+}
 
 
 def main(**kwargs):
@@ -32,40 +40,77 @@ def main(**kwargs):
     assert os.path.exists(os.path.join(config.input_path, 'test.csv'))
 
     if config.reload is not None:
-        model = data.load(config.reload, as_type='pickle')
-        evaluate(model, config)
+        model = load_model(config.results_path)
+        evaluate(model)
     else:
         # create model
-        model_types = {
-            # 'baseline': nativeness.models.baseline.Baseline,
-            'majority': nativeness.models.majority.Majority,
-            'logistic': nativeness.models.logistic.Logistic,
-        }
-        model = model_types[config.model_type](config)
-        train(model, config)
-        evaluate(model, config)
+        model = MODEL_TYPES[config.model_type](config)
+        train(model)
+        evaluate(model)
 
 
-def train(model, config):
-    log.debug('Training {} model'.format(config.model_type))
+def load_model(results_path):
+    """
+    Loads a model type
+
+    Parameters
+    ----------
+    results_path : str
+        where an existing config might be
+
+    Returns
+    -------
+    NativenessModel
+    """
+    # use the results path to get the model data
+    config_path = os.path.join(results_path, 'model.config')
+
+    # load the model data
+    config = data.load(config_path, as_type='pickle')
+
+    weights_path = os.path.join(results_path, 'model.weights')
+
+    model = MODEL_TYPES[config.model_type](config)
+    model.load(weights_path)
+
+    log.info('Loaded a {}'.format(model.__class__.__name__))
+
+    return model
+
+
+def train(model):
+    # save the model config
+    log.debug('Saving the model configuration')
+    data.save(
+        model.config.results_path,
+        model.config,
+        'model.config',
+        as_type='pickle'
+    )
+
+    log.debug('Training {} model'.format(model.config.model_type))
 
     # train model
     dev_preds = np.asarray(
-        model.train(data.train_generator(config), data.dev_generator(config))
+        model.train(
+            data.train_generator(model.config),
+            data.dev_generator(model.config)
+        )
     )
 
     log.debug('Saving the dev predictions')
-    dev_data = data.load(os.path.join(config.input_path, 'dev.csv'))
+    dev_data = data.load(os.path.join(model.config.input_path, 'dev.csv'))
 
-    if config.debug:
+    if model.config.debug:
         dev_data = data.debug(dev_data)
 
     dev_data['prediction'] = dev_preds
-    data.save(config.results_path, dev_data, 'dev_preds.csv', as_type='csv')
-
-    # save the model
-    log.debug('Saving the model')
-    data.save(config.results_path, model, 'model', as_type='pickle')
+    data.save(
+        model.config.results_path,
+        dev_data,
+        'dev_preds.csv',
+        as_type='csv'
+    )
 
     # load dev data
     log.debug('Calculating dev metrics')
@@ -76,40 +121,52 @@ def train(model, config):
 
     log.debug('Saving metrics')
     data.save(
-        config.results_path, dev_metrics, 'dev_metrics.json', as_type='json'
+        model.config.results_path,
+        dev_metrics,
+        'dev_metrics.json',
+        as_type='json'
     )
 
     # plot the PR curve and save it
-    plot_path = os.path.join(config.results_path, 'dev_roc_curve.png')
+    plot_path = os.path.join(model.config.results_path, 'dev_roc_curve.png')
     metrics.plot(
-        dev_data.non_native.values, dev_preds, config.model_type, plot_path
+        dev_data.non_native.values,
+        dev_preds,
+        model.config.model_type,
+        plot_path
     )
 
 
-def evaluate(model, config):
+def evaluate(model):
     log.debug('Predicting on test data')
 
     # get predictions
-    preds, window_preds = model.predict(data.test_generator(config))
+    preds, window_preds = model.predict(data.test_generator(model.config))
 
     # save predictions
     log.debug('Saving the test predictions')
     # load test data
-    test_data = data.load(os.path.join(config.input_path, 'test.csv'))
-    if config.debug:
+    test_data = data.load(os.path.join(model.config.input_path, 'test.csv'))
+    if model.config.debug:
         test_data = data.debug(test_data)
 
     test_data['prediction'] = preds
-    data.save(config.results_path, test_data, 'test_preds.csv', as_type='csv')
+    data.save(
+        model.config.results_path,
+        test_data,
+        'test_preds.csv',
+        as_type='csv'
+    )
 
     # save the window preds
     window_data = {
-        'size': config.window_size,
-        'stride': config.window_stride,
+        'size': model.config.window_size,
+        'stride': model.config.window_stride,
         'preds': [p.tolist() for p in window_preds],
+        'used_max': model.__class__.__name__.endswith('Max')
     }
     data.save(
-        config.results_path,
+        model.config.results_path,
         window_data,
         'test_window_preds.json',
         as_type='json'
@@ -122,13 +179,19 @@ def evaluate(model, config):
     # save metrics
     log.debug('Saving metrics')
     data.save(
-        config.results_path, test_metrics, 'test_metrics.json', as_type='json'
+        model.config.results_path,
+        test_metrics,
+        'test_metrics.json',
+        as_type='json'
     )
 
     # plot the PR curve and save it
-    plot_path = os.path.join(config.results_path, 'test_roc_curve.png')
+    plot_path = os.path.join(model.config.results_path, 'test_roc_curve.png')
     metrics.plot(
-        test_data.non_native.values, preds, config.model_type, plot_path
+        test_data.non_native.values,
+        preds,
+        model.config.model_type,
+        plot_path
     )
 
 
@@ -141,7 +204,12 @@ def parse_args():
     argparse.Namespace
     """
     desc = 'Train and eveluate a Nativeness model'
-    parser = argparse.ArgumentParser(description=desc)
+    epilog = (
+        'In addition, any parameters in Config can be overridden by adding '
+        '"name=value" as an argument. As a shortcut, just adding "name" is '
+        'equivalent to "name=True"'
+    )
+    parser = argparse.ArgumentParser(description=desc, epilog=epilog)
 
     input_path_help = 'Directory where the data is located'
     parser.add_argument(
@@ -178,7 +246,10 @@ def parse_args():
         help=debug_help
     )
 
-    reload_help = 'Reload a saved model'
+    reload_help = (
+        'Path to an existing results directory. The model saved there will be '
+        'reloaded and no training will be done (only evaluate)'
+    )
     parser.add_argument(
         '-r',
         '--reload',
@@ -202,6 +273,9 @@ def parse_args():
         help=verbosity_help,
         default=logging.getLevelName(logging.INFO)
     )
+
+    # drop any extra arguments in an "extra" array
+    parser.add_argument('extra', nargs=argparse.REMAINDER)
 
     # Parse the command line arguments
     args = parser.parse_args()

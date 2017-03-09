@@ -30,7 +30,7 @@ def load(path, as_type='csv'):
     loaders = {
         'pickle': _load_pickle,
         'json': _load_json,
-        'csv': _load_csv
+        'csv': _load_csv,
     }
     return loaders[as_type](path)
 
