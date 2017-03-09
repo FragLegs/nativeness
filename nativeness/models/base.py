@@ -29,8 +29,6 @@ class Config(object):
 
         self.log_device = False
 
-        self.extra = []
-
         # add all keyword arguments to namespace
         self.__dict__.update(kwargs)
         for e in self.extra:

@@ -1,0 +1,4 @@
+#! /bin/bash
+aws s3 cp s3://smiel/ella/nativeness/test.csv /research/ella/nativeness/test.csv
+aws s3 cp s3://smiel/ella/nativeness/train.csv /research/ella/nativeness/train.csv
+aws s3 cp s3://smiel/ella/nativeness/dev.csv /research/ella/nativeness/dev.csv
