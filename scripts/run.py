@@ -12,21 +12,24 @@ import nativeness.utils.data as data
 import nativeness.utils.metrics as metrics
 import nativeness.utils.progress
 
-# allow instance to not have properly configured tensorflow (for logistic)
-try:
-    import nativeness.models.pool
-except:
-    print('Cannot load tensorflow')
-
 
 log = logging.getLogger(name=__name__)
 MODEL_TYPES = {
     'majority': nativeness.models.majority.Majority,
     'logistic_avg': nativeness.models.logistic.LogisticAvg,
     'logistic_max': nativeness.models.logistic.LogisticMax,
-    'pool_avg': nativeness.models.pool.BiLSTMPoolAvg,
-    'pool_max': nativeness.models.pool.BiLSTMPoolMax,
 }
+
+
+# allow instance to not have properly configured tensorflow (for logistic)
+try:
+    import nativeness.models.pool
+    MODEL_TYPES.update({
+        'pool_avg': nativeness.models.pool.BiLSTMPoolAvg,
+        'pool_max': nativeness.models.pool.BiLSTMPoolMax,
+    })
+except:
+    print('Cannot load tensorflow')
 
 
 def main(**kwargs):
