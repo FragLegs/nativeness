@@ -35,6 +35,9 @@ class Config(object):
         # this needs to be updated if the training data changes
         self.n_prompts = 95
 
+        # weight for the weighted sum of losses
+        self.scale_prompt_loss = 1.0
+
         # add all keyword arguments to namespace
         self.__dict__.update(kwargs)
         for e in self.extra:

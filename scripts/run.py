@@ -24,9 +24,12 @@ MODEL_TYPES = {
 # allow instance to not have properly configured tensorflow (for logistic)
 try:
     import nativeness.models.pool
+    import nativeness.models.prompt
     MODEL_TYPES.update({
         'pool_avg': nativeness.models.pool.BiLSTMPoolAvg,
         'pool_max': nativeness.models.pool.BiLSTMPoolMax,
+        'prompt_avg': nativeness.models.prompt.PromptAwareAvg,
+        'prompt_max': nativeness.models.prompt.PromptAwareMax
     })
 except:
     print('Cannot load tensorflow')

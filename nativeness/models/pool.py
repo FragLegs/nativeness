@@ -66,7 +66,8 @@ class BiLSTMPool(NativeNN):
                          labels_batch=None,
                          keep_prob=1.0,
                          learning_rate=None,
-                         dev_auc=0.5):
+                         dev_auc=0.5,
+                         prompt_batch=None):
         """
         Creates the feed_dict for one step of training.
 

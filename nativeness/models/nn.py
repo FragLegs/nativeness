@@ -118,7 +118,13 @@ class NativeNN(NativenessModel):
 
         raise NotImplementedError("Each Model must re-implement this method.")
 
-    def train_on_batch(self, sess, inputs_batch, labels_batch, lr, auc):
+    def train_on_batch(self,
+                       sess,
+                       inputs_batch,
+                       labels_batch,
+                       lr,
+                       auc,
+                       prompt_batch=None):
         """Perform one step of gradient descent on the provided batch of data.
 
         Args:
@@ -133,7 +139,8 @@ class NativeNN(NativenessModel):
             labels_batch=labels_batch,
             keep_prob=self.config.keep_prob,
             learning_rate=lr,
-            dev_auc=auc
+            dev_auc=auc,
+            prompt_batch=prompt_batch
         )
         _, loss, _, summary, global_step = sess.run(
             [
@@ -226,7 +233,12 @@ class NativeNN(NativenessModel):
         for windows, label, prompt_id in train_generator():
             i += 1
             loss, summary, global_step = self.train_on_batch(
-                sess, np.array(windows), [[label]], lr, auc
+                sess=sess,
+                inputs_batch=np.array(windows),
+                labels_batch=[[label]],
+                lr=lr,
+                auc=auc,
+                prompt_batch=np.repeat([prompt_id], len(windows))
             )
             prog.update(i, [('loss', loss)])
             writer.add_summary(summary, global_step)
