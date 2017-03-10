@@ -30,6 +30,7 @@ class Config(object):
         self.random_seed = None
 
         self.log_device = False
+        self.in_memory = True
 
         # add all keyword arguments to namespace
         self.__dict__.update(kwargs)
@@ -40,9 +41,11 @@ class Config(object):
             else:
                 self.__dict__[e] = True
 
+        if self.debug:
+            self.max_essays_per_epoch = 10
+
         if self.random_seed is None:
             self.random_seed = random.randint(0, 10000)
-        log.debug('Random seed is {}'.format(self.random_seed))
 
         if self.reload is not None:
             self.results_path = self.reload
@@ -67,6 +70,7 @@ class Config(object):
         root_log.addHandler(log_to_file)
 
         log.debug('Recording results at {}'.format(self.results_path))
+        log.debug('Random seed is {}'.format(self.random_seed))
 
         # set the random seed
         random.seed(self.random_seed)

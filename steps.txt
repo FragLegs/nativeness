@@ -4,6 +4,9 @@
 4) git pull
 5) ./download
 5) screen -dRR runner
+
+export LD_LIBRARY_PATH=/home/ubuntu/src/torch/install/lib:/home/ubuntu/src/torch/install/lib:/home/ubuntu/src/cntk/bindings/python/cntk/libs:/usr/local/cuda/lib64:/usr/local/lib:/usr/lib:/usr/local/cuda/extras/CUPTI/lib64:/usr/local/mpi/lib:/home/ubuntu/src/mxnet/mklml_lnx_2017.0.1.20161005/lib:
+
 6) One of:
 
 python scripts/run.py -m logistic_avg -v DEBUG
@@ -14,10 +17,28 @@ python scripts/run.py -m pool_max -v DEBUG
 7) Copy results location
 8) Ctrl-a d
 9) screen -dRR log_server
-10) ./serve results_location
+10) ./serve results_location 6007
 11) Ctrl-a d
 12) screen -dRR tensorboard    ( if pool_avg or pool_max )
 13) ./tensorboard results_location
 14) Ctrl-a d
 15) logout
 16) profit
+
+17) ssh in
+18) aws s3 cp --recursive results_location s3://smiel/ella/nativeness/results/...
+
+
+Locations:
+/research/ella/nativeness/results/logistic_avg/20170310_041013
+/research/ella/nativeness/results/logistic_avg/20170310_054034
+/research/ella/nativeness/results/logistic_avg/20170310_141632
+
+/research/ella/nativeness/results/logistic_max/20170310_043045
+/research/ella/nativeness/results/logistic_max/20170310_054222
+
+/research/ella/nativeness/results/pool_avg/20170310_051352
+
+~/src/bin/testTensorFlow
+
+/home/ubuntu/src/torch/install/lib:/home/ubuntu/src/torch/install/lib:/home/ubuntu/src/cntk/bindings/python/cntk/libs:/usr/local/cuda/lib64:/usr/local/lib:/usr/lib:/usr/local/cuda/extras/CUPTI/lib64:/usr/local/mpi/lib:/home/ubuntu/src/mxnet/mklml_lnx_2017.0.1.20161005/lib:

@@ -1,0 +1,3 @@
+#!/bin/bash
+DNS_NAME=$(aws ec2 describe-instances --instance-ids i-0adb356e6ab510dc8 --query 'Reservations[0].Instances[0].PublicDnsName' --output text)
+ssh -i /home/smiel/Documents/aws/shayne_16_09.pem ubuntu@$DNS_NAME

@@ -158,7 +158,14 @@ def debug(df):
 
 
 class WindowGenerator(object):
-    def __init__(self, path, window_size, window_stride, debug, shuffle=False):
+    def __init__(self,
+                 path,
+                 window_size,
+                 window_stride,
+                 debug,
+                 shuffle=False,
+                 in_memory=False,
+                 loop=False):
         """
         Parameters
         ----------
@@ -172,14 +179,68 @@ class WindowGenerator(object):
             Whether to limit the training/dev data
         shuffle : bool, optional
             Whether to shuffle the data
+        in_memory : bool, optional
+            Whether to load all of the data into memory to increase speed and
+            reduce randomness from reshuffling
+        loop : bool, optional
+            Whether to keep looping over the data or not
         """
         self.path = path
         self.window_size = window_size
         self.window_stride = window_stride
         self.debug = debug
         self.shuffle = shuffle
+        self.in_memory = in_memory
+        self.loop = loop
+
+        # load the data into memory
+        if self.in_memory:
+            log.debug('Loading data into memory. This may take a while.')
+
+            self._i = 0
+            self._data = [d for d in self._load_and_parse_data()]
+            self._size = len(self._data)
 
     def __call__(self, no_windows=False, no_ints=False):
+        """
+        Yields essays represented as windows of character ints with labels
+
+        Parameters
+        ----------
+        no_windows : bool, optional
+            If True, don't make the windows
+
+        no_ints : bool, optional
+            If True, don't convert to ints (i.e. for Logistic)
+
+        Yields
+        -------
+        tuple (iterable of iterable of int, bool, int)
+            - The windows of text represented as iterables of ints
+            - Whether this is an ELL writer (True) or not
+            - The prompt index (in case we need to control for it)
+        """
+        if self.in_memory:
+            if no_windows or no_ints:
+                raise ValueError(
+                    'Cannot use no_windows or no_ints with in_memory!'
+                )
+            while True:  # loop forever
+                if self._i >= self._size:
+                    # reset it
+                    self._i = 0
+                    if not self.loop:
+                        break
+
+                log.debug('Size {}, Yielding {}'.format(self._size, self._i))
+                yield self._data[self._i]
+                self._i += 1
+
+        else:
+            for data in self._load_and_parse_data(no_windows, no_ints):
+                yield data
+
+    def _load_and_parse_data(self, no_windows=False, no_ints=False):
         """
         Yields essays represented as windows of character ints with labels
 
@@ -252,7 +313,9 @@ def train_generator(config):
         config.window_size,
         config.window_stride,
         config.debug,
-        shuffle=True
+        shuffle=True,
+        in_memory=config.in_memory,
+        loop=True
     )
 
 
@@ -263,6 +326,9 @@ def dev_generator(config):
         config.window_size,
         config.window_stride,
         config.debug,
+        shuffle=False,
+        in_memory=config.in_memory,
+        loop=False
     )
 
 
@@ -273,6 +339,9 @@ def test_generator(config):
         config.window_size,
         config.window_stride,
         config.debug,
+        shuffle=False,
+        in_memory=False,
+        loop=False
     )
 
 
