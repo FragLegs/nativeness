@@ -199,7 +199,6 @@ class WindowGenerator(object):
             - The prompt index (in case we need to control for it)
         """
         # load the data
-        log.debug('Loading data from {}'.format(self.path))
         df = load(self.path, as_type='csv')
 
         has_prompt = 'prompt_index' in df.columns
@@ -235,7 +234,6 @@ class WindowGenerator(object):
             return self._size
         except AttributeError:
             # load the data
-            log.debug('Loading data from {}'.format(self.path))
             df = load(self.path, as_type='csv')
 
             # only use 10 instances if we're debugging

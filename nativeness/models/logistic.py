@@ -64,7 +64,7 @@ class Logistic(NativenessModel):
         max_essays_per_epoch = self.config.max_essays_per_epoch
 
         for epoch in range(self.config.n_epochs):
-            log.debug('Epoch {}'.format(epoch))
+            log.info('Epoch {}'.format(epoch))
 
             log.debug('Training SGD')
 

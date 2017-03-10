@@ -50,8 +50,23 @@ class BiLSTMPool(NativeNN):
             shape=(),
             name='keep_prob'
         )
+        self.learning_rate_placeholder = tf.placeholder(
+            tf.float32,
+            shape=(),
+            name='learning_rate'
+        )
+        self.dev_auc_placeholder = tf.placeholder(
+            tf.float32,
+            shape=(),
+            name='dev_auc'
+        )
 
-    def create_feed_dict(self, inputs_batch, labels_batch=None, keep_prob=1.0):
+    def create_feed_dict(self,
+                         inputs_batch,
+                         labels_batch=None,
+                         keep_prob=1.0,
+                         learning_rate=None,
+                         dev_auc=0.5):
         """
         Creates the feed_dict for one step of training.
 
@@ -83,8 +98,13 @@ class BiLSTMPool(NativeNN):
                 [self.config.window_size],
                 inputs_batch.shape[0]
             ),
-            self.keep_prob_placeholder: keep_prob
+            self.keep_prob_placeholder: keep_prob,
+            self.learning_rate_placeholder: learning_rate,
+            self.dev_auc_placeholder: dev_auc
         }
+
+        if learning_rate is not None:
+            feed_dict[self.learning_rate_placeholder] = learning_rate
 
         if labels_batch is not None:
             feed_dict[self.labels_placeholder] = labels_batch
@@ -98,7 +118,7 @@ class BiLSTMPool(NativeNN):
         -------
             embeddings: tf.Tensor of shape (None, window_size, embed_size)
         """
-        vocab = tf.Variable(
+        self.vocab = tf.Variable(
             initial_value=tf.contrib.layers.xavier_initializer()((
                 self.config.vocab_size, self.config.embed_size
             )),
@@ -106,7 +126,7 @@ class BiLSTMPool(NativeNN):
         )
 
         # features should be (None, window_size, embed_size)
-        embeddings = tf.nn.embedding_lookup(vocab, self.input_placeholder)
+        embeddings = tf.nn.embedding_lookup(self.vocab, self.input_placeholder)
 
         # add dropout
         return tf.nn.dropout(embeddings, self.keep_prob_placeholder)
@@ -128,7 +148,7 @@ class BiLSTMPool(NativeNN):
         lstm_bw = tf.nn.rnn_cell.BasicLSTMCell(self.config.hidden_size)
 
         # add a bidirectional LSTM
-        outputs, _ = tf.nn.bidirectional_dynamic_rnn(
+        outputs, states = tf.nn.bidirectional_dynamic_rnn(
             cell_fw=lstm_fw,
             cell_bw=lstm_bw,
             inputs=embeddings,
@@ -136,34 +156,39 @@ class BiLSTMPool(NativeNN):
             sequence_length=self.sequence_length
         )
 
-        # concat the outputs and take the final output
-        final_output = tf.reshape(
-            tf.slice(
-                tf.concat(2, outputs),
-                [0, self.config.window_size - 1, 0],
-                [-1, 1, -1]
-            ),
-            shape=(-1, self.config.rnn_output_size * 2)
-        )
+        state_fw, state_bw = states
+        final_c_fw, final_h_fw = state_fw
+        final_c_bw, final_h_bw = state_bw
+        final_output = tf.concat(1, (final_h_fw, final_h_bw))
+
+        # # concat the outputs and take the final output
+        # final_output = tf.reshape(
+        #     tf.slice(
+        #         tf.concat(2, outputs),
+        #         [0, self.config.window_size - 1, 0],
+        #         [-1, 1, -1]
+        #     ),
+        #     shape=(-1, self.config.rnn_output_size * 2)
+        # )
 
         dropped_output = tf.nn.dropout(
             final_output, self.keep_prob_placeholder
         )
 
         # add an affine layer
-        W = tf.Variable(
+        self.W = tf.Variable(
             initial_value=tf.contrib.layers.xavier_initializer()((
                 self.config.hidden_size * 2, 1
             )),
             name='W'
         )
-        b = tf.Variable(
+        self.b = tf.Variable(
             initial_value=tf.zeros(1,),
             name='b'
         )
 
         # predict on the output
-        return tf.sigmoid(tf.matmul(dropped_output, W) + b)
+        return tf.sigmoid(tf.matmul(dropped_output, self.W) + self.b)
 
     def add_loss_op(self, pred):
         """Adds Ops for the loss function to the computational graph.
@@ -173,8 +198,13 @@ class BiLSTMPool(NativeNN):
         Returns:
             loss: A 0-d tensor (scalar) output
         """
+
         # compute the log loss
-        return tf.contrib.losses.log_loss(self.labels_placeholder, pred)
+        loss = tf.contrib.losses.log_loss(
+            labels=self.labels_placeholder, predictions=pred
+        )
+
+        return loss
 
     def add_training_op(self, loss):
         """Sets up the training Ops.
@@ -193,10 +223,11 @@ class BiLSTMPool(NativeNN):
         Returns:
             train_op: The Op for training.
         """
+        self.global_step = tf.Variable(0, name='global_step', trainable=False)
         optimizer = tf.train.AdamOptimizer(
-            learning_rate=self.config.learning_rate
+            learning_rate=self.learning_rate_placeholder
         )
-        return optimizer.minimize(loss=loss)
+        return optimizer.minimize(loss=loss, global_step=self.global_step)
 
 
 class BiLSTMPoolAvg(BiLSTMPool):

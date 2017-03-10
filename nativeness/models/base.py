@@ -12,8 +12,9 @@ log = logging.getLogger(name=__name__)
 
 class Config(object):
     def __init__(self, **kwargs):
-        self.n_epochs = 10
-        self.learning_rate = 0.001
+        self.n_epochs = 1000
+        self.lr = 0.1
+        self.lr_delta = 0.75
         self.embed_size = 32
         self.hidden_size = 64
         self.rnn_output_size = self.hidden_size
@@ -24,9 +25,9 @@ class Config(object):
         self.window_stride = 1
 
         self.ngram_size = 4
-        self.max_essays_per_epoch = 5000
+        self.max_essays_per_epoch = 1000
 
-        self.random_seed = 42
+        self.random_seed = None
 
         self.log_device = False
 
@@ -38,6 +39,10 @@ class Config(object):
                 self.__dict__[k] = eval(v)
             else:
                 self.__dict__[e] = True
+
+        if self.random_seed is None:
+            self.random_seed = random.randint(0, 10000)
+        log.debug('Random seed is {}'.format(self.random_seed))
 
         if self.reload is not None:
             self.results_path = self.reload

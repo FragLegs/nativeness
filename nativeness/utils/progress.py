@@ -105,6 +105,7 @@ class Progbar(object):
 
             if current >= self.target:
                 sys.stdout.write("\n")
+                log.debug('{}{}'.format(bar, info))
 
         if self.verbose == 2:
             if current >= self.target:

@@ -1,0 +1,22 @@
+1) Launch instance
+2) ssh in
+3) Ensure pip freeze has current scikit, etc
+4) screen -dRR runner
+5) cd projects/nativeness
+6) One of:
+
+python scripts/run.py -m logistic_avg -v DEBUG
+python scripts/run.py -m logistic_max -v DEBUG
+python scripts/run.py -m pool_avg -v DEBUG
+python scripts/run.py -m pool_max -v DEBUG
+
+7) Copy results location
+8) Ctrl-a d
+9) screen -dRR log_server
+10) ./serve results_location
+11) Ctrl-a d
+12) screen -dRR tensorboard    ( if pool_avg or pool_max )
+13) ./tensorboard results_location
+14) Ctrl-a d
+15) logout
+16) profit
