@@ -1,8 +1,9 @@
 1) Launch instance
 2) ssh in
-3) Ensure pip freeze has current scikit, etc
-4) screen -dRR runner
-5) cd projects/nativeness
+3) cd projects/nativeness
+4) git pull
+5) ./download
+5) screen -dRR runner
 6) One of:
 
 python scripts/run.py -m logistic_avg -v DEBUG

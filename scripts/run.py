@@ -8,10 +8,15 @@ import numpy as np
 import nativeness.models.base
 import nativeness.models.logistic
 import nativeness.models.majority
-import nativeness.models.pool
 import nativeness.utils.data as data
 import nativeness.utils.metrics as metrics
 import nativeness.utils.progress
+
+# allow instance to not have properly configured tensorflow (for logistic)
+try:
+    import nativeness.models.pool
+except:
+    print('Cannot load tensorflow')
 
 
 log = logging.getLogger(name=__name__)
