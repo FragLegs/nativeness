@@ -171,7 +171,7 @@ class BiLSTMPool(NativeNN):
         #     shape=(-1, self.config.rnn_output_size * 2)
         # )
 
-        dropped_output = tf.nn.dropout(
+        self.dropped_output = tf.nn.dropout(
             final_output, self.keep_prob_placeholder
         )
 
@@ -188,7 +188,7 @@ class BiLSTMPool(NativeNN):
         )
 
         # predict on the output
-        return tf.sigmoid(tf.matmul(dropped_output, self.W) + self.b)
+        return tf.sigmoid(tf.matmul(self.dropped_output, self.W) + self.b)
 
     def add_loss_op(self, pred):
         """Adds Ops for the loss function to the computational graph.
