@@ -232,7 +232,6 @@ class WindowGenerator(object):
                     if not self.loop:
                         break
 
-                log.debug('Size {}, Yielding {}'.format(self._size, self._i))
                 yield self._data[self._i]
                 self._i += 1
 

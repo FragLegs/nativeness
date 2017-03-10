@@ -38,6 +38,8 @@ Locations:
 /research/ella/nativeness/results/logistic_max/20170310_054222
 
 /research/ella/nativeness/results/pool_avg/20170310_051352
+/research/ella/nativeness/results/pool_avg/20170310_160824
+/research/ella/nativeness/results/pool_avg/20170310_160937
 
 ~/src/bin/testTensorFlow
 
