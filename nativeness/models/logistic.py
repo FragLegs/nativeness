@@ -74,6 +74,8 @@ class Logistic(NativenessModel):
 
             i = 0
             for windows, label, _ in train_generator(no_ints=True):
+                if len(windows) > 2000:
+                    continue
                 i += 1
                 X = self.extractor.transform(windows)
                 y = np.repeat([label], X.shape[0])
