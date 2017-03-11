@@ -45,6 +45,10 @@ Locations:
 /research/ella/nativeness/results/pool_avg/20170310_160824
 /research/ella/nativeness/results/pool_avg/20170310_160937
 /research/ella/nativeness/results/pool_avg/20170310_161200
+/research/ella/nativeness/results/pool_avg/20170311_213813
+
+/research/ella/nativeness/results/pool_max/20170311_145946
+
 
 ~/src/bin/testTensorFlow
 

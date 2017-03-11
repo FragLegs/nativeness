@@ -273,8 +273,16 @@ class WindowGenerator(object):
 
         for index, row in df.iterrows():
             windows = None if no_windows else (
-                to_windows(row.text) if no_ints else
-                to_windows(to_ints(row.text))
+                to_windows(
+                    row.text,
+                    size=self.window_size,
+                    stride=self.window_stride
+                ) if no_ints else
+                to_windows(
+                    to_ints(row.text),
+                    size=self.window_size,
+                    stride=self.window_stride
+                )
             )
             label = row.non_native
             prompt = row.prompt_index if has_prompt else None

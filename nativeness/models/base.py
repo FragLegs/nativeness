@@ -12,7 +12,7 @@ log = logging.getLogger(name=__name__)
 
 class Config(object):
     def __init__(self, **kwargs):
-        self.n_epochs = 50
+        self.n_epochs = 10
         self.lr = 0.1
         self.lr_delta = 0.9
         self.embed_size = 32
@@ -22,10 +22,10 @@ class Config(object):
         self.keep_prob = 0.75
 
         self.window_size = 100
-        self.window_stride = 1
+        self.window_stride = 5
 
         self.ngram_size = 4
-        self.max_essays_per_epoch = 1000
+        self.max_essays_per_epoch = 80000
 
         self.random_seed = None
 
