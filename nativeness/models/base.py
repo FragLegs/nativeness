@@ -12,9 +12,9 @@ log = logging.getLogger(name=__name__)
 
 class Config(object):
     def __init__(self, **kwargs):
-        self.n_epochs = 1000
+        self.n_epochs = 50
         self.lr = 0.1
-        self.lr_delta = 0.75
+        self.lr_delta = 0.9
         self.embed_size = 32
         self.hidden_size = 64
         self.rnn_output_size = self.hidden_size

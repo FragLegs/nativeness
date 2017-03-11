@@ -49,3 +49,6 @@ Locations:
 ~/src/bin/testTensorFlow
 
 /home/ubuntu/src/torch/install/lib:/home/ubuntu/src/torch/install/lib:/home/ubuntu/src/cntk/bindings/python/cntk/libs:/usr/local/cuda/lib64:/usr/local/lib:/usr/lib:/usr/local/cuda/extras/CUPTI/lib64:/usr/local/mpi/lib:/home/ubuntu/src/mxnet/mklml_lnx_2017.0.1.20161005/lib:
+
+
+aws s3 cp --recursive /research/ella/nativeness/results/pool_avg/20170310_161200 s3://smiel/ella/nativeness/results/pool_avg/20170310_161200
