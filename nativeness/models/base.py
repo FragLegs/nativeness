@@ -12,20 +12,20 @@ log = logging.getLogger(name=__name__)
 
 class Config(object):
     def __init__(self, **kwargs):
-        self.n_epochs = 10
-        self.lr = 0.1
+        self.n_epochs = 12
+        self.lr = 0.001
         self.lr_delta = 0.9
-        self.embed_size = 32
-        self.hidden_size = 64
+        self.embed_size = 64
+        self.hidden_size = 128
         self.rnn_output_size = self.hidden_size
         self.vocab_size = 126 - 31  # the printable ascii characters
-        self.keep_prob = 0.75
+        self.keep_prob = 0.9
 
         self.window_size = 100
         self.window_stride = 5
 
         self.ngram_size = 4
-        self.max_essays_per_epoch = 80000
+        self.max_essays_per_epoch = 20000
 
         self.random_seed = None
 

@@ -1,0 +1,487 @@
+\documentclass{article} % For LaTeX2e
+\usepackage{nips13submit_e,times}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{tabularx}
+%\documentstyle[nips13submit_09,times,art10]{article} % For LaTeX 2.09
+
+
+\title{Detecting ELL Writing}
+
+
+\author{
+Shayne Miel \\
+SUNet ID: smiel\\
+\texttt{smiel@stanford.edu} \\
+}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to \LaTeX{} to determine where to break
+% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
+% puts 3 of 4 authors names on the first line, and the last on the second
+% line, try using \AND instead of \And before the third author name.
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+\nipsfinalcopy % Uncomment for camera-ready version
+
+\begin{document}
+
+
+\maketitle
+
+\begin{abstract}
+Determining whether an author is writing in their native language (L1) or a
+second language (L2) is a problem that lies at the intersection of three
+traditional NLP tasks: native language identification, similar language
+identification, and detecting translationese.
+In general, the goal of the language
+learner is to improve their proficiency until their writing is indistinguishable
+from that of a native speaker. By being able to automatically and reliably
+determine whether a section of text looks like L1 or L2 text, areas of writing
+that still need improvement can be brought to the learner's attention.
+Additionally, the state of the art for correcting grammatical errors involves
+using machine translation to translate from errorful text to corrected text\cite{chollampatt}
+and there is interesting work being done in generating new training examples
+by using machine translation to go
+from error-free text to errorful text.\cite{liu} Both approaches could be enhanced by a
+system that can tell how close the translation is to an L1 or L2 target.
+
+I present a supervised deep learning method for determining the probability
+that an essay was written by an English Language Learner (ELL) or a
+native English writer, using document-level labels while presenting only sliding
+windows of text to the model. A bidirectional LSTM acts as a convolution
+filter for the text and a pooling layer provides the final document-level
+prediction. My model improves upon a simple baseline by 0.2 AUC, but is
+unfortunately still picking up on confounds due to the data collection process.
+\end{abstract}
+
+\section{Introduction}
+
+One of the largest challenges for non-native English students is learning to
+write in a way that reads like native English writing. Why blah
+
+Examples
+
+An automated means of providing feedback on areas of text that appear less
+like native English writing would be useful to students learning the language.
+
+This paper introduces a relatively simple model blah
+
+Section 2.1 provides examples of similar work wrt the task and section 2.2 wrt
+the approach. Section 3 describes the network in detail as well as several
+modifications that were tested. Section 4 gives the particulars of the
+experiment, including how the corpus was split into train/dev/test splits, the
+metric used, and the hyperparamters tested. Finally, section 5 analyzes the
+results and provides some next steps for future research.
+
+\section{Related work}
+
+\subsection{Task}
+
+The task of ELL writing detection has not been studied extensively. Tomokiyo, et al.
+attempt this task using the TODO corpus and a TODO. \cite{tomokiyo}
+However, their work focuses
+mostly on text transcribed from spoken recordings, rather than writing generated
+by the ELL writer.
+
+A similar task, native language identification, has received more attention.
+Malmasi, et al, established the ETS TOEFL-11 corpus, which has been used by a
+number of researchers. \cite{malmasi} Unfortunately for the purposes in this
+paper, native English writers don't tend to take the TOEFL and as such are not
+represented in this work. \cite{ionescu}
+
+Classifying writing from similar language pairs (for instance TODO and TODO) is
+also related to this task, in that the same words are being used but the grammatical
+constructs are generally not followed in the same way. Gouette explores this
+task using a TODO . \cite{goutte}
+
+Finally, detecting translationese is also quite similar to this work in that
+beginning ELL students tend to conceive the structure and content of their essays
+in their primary language and then translate it to English when setting it
+down in writing. Baroni has studied this problem with TODO \cite{baroni}
+
+\subsection{Model}
+
+One of the existing challenges for using RNNs and semantic vectors in general
+is figuring out how best to encode long documents. The approach taken in this
+paper is to use an LSTM as a convolution layer over sliding windows of text.
+This approach bears some similarities to prior work. Tang,
+et al. work with both a CNN and an LSTM to compose word vectors into sentence
+vectors, and then compose the sentence vectors into document vectors using a
+gated recurrent network.\cite{tang} Yang, et al. use a similar
+word-layer/sentence-layer architecture, but also provide an attention mechanism
+at each layer to enhance the quality of the output vectors.\cite{yang} The model in this
+paper differs from both of these in that the second level vectors contain
+overlapping information, due to the overlapping nature of sliding windows.
+
+In \cite{mikolov}, Mikolov describes a way to generate
+document vectors by adding a document token to the context of every word in the
+document in what is otherwise a standard word2vec model. While this approach
+is better than simply averaging all of the word vectors in the document, it
+loses important information about the order of tokens that are crucial to
+detecting ungrammatical English.
+
+Collobert, et al. use
+a convolutional layer with a max pooling layer to generate window vectors
+around each word in a part of speech tagging task.\cite{collobert} This is similar
+to the model presented here, except that I use an LSTM \textit{as} the convolution.
+
+
+\section{Approach}
+
+\subsection{Data collection}
+
+\begin{table}[t]
+\caption{ELL and Native English Corpora}
+\label{data-table}
+\begin{center}
+\begin{tabularx}{\textwidth}{l r r X}
+\multicolumn{1}{c}{\bf CORPUS} &\multicolumn{1}{c}{\bf $n$ ESSAYS} &\multicolumn{1}{c}{\bf $n$ PROMPTS} &\multicolumn{1}{c}{\bf L1s}
+\\ \hline \\
+\hline
+\href{http://language.sakura.ne.jp/icnale/}{ICNALE} & $5,600$ & $2$ & CHN, \textbf{ENG}, FIL, HKG, IND, JPN, \newline KOR, PAK, SIN, THA, TWN \\
+\href{http://www.comp.nus.edu.sg/~nlp/conll14st.html\#nucle32}{NUCLE} & $1,397$ & $3$ & CHN \\
+\href{http://ilexir.co.uk/datasets/index.html}{FCE} & $2,481$ & $44$ & CAT, CHN, FRA, GER, GRC, ITA, \newline JPN, KOR, NL, POL, PRT, RUS, \newline SPA, SWE, THA, TUR \\
+\href{https://meta-toolkit.org/data/2016-01-26/ceeaus.tar.gz}{CEEAUS} & $1,008$ & $2$ & CHN, \textbf{ENG}, JPN \\
+\href{http://www.u-sacred-heart.ac.jp/okugiri/links/moecs/links/data/data.html}{MOECS} & $199$ & $1$ & \textbf{ENG}, JPN \\
+\href{http://koreanlearnercorpusblog.blogspot.be/p/corpus.html}{Gachon} & $15,831$ & $20$ & KOR \\
+\href{http://www.bfsu-corpus.org/static/corpora/TECCL_Corpus_V1.1.zip}{TECCL} & $9,864$ & $???$ & CHN \\
+Private A & $550$ & $1$ & KOR \\
+Private B & $4,694$ & $4$ & CHN \\
+\href{https://catalog.ldc.upenn.edu/LDC2014T06}{TOEFL-11} & $12,100$ & $8$ & ARA, CHN, FRA, GER, IND, ITA, \newline JPN, KOR, SPA, TEL, TUR \\
+Private C & $41,227$ & $53$ & \textbf{ENG} \\
+Private D & $29,559$ & $21$ & \textbf{ENG} \\
+\href{https://www.kaggle.com/c/asap-aes/data}{ASAP} & $17,677$ & $8$ & \textbf{ENG} \\
+\end{tabularx}
+\end{center}
+\end{table}
+
+\begin{table}
+\caption{L1s}
+\label{L1s-table}
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\multicolumn{1}{c}{\bf ABBREVIATION} & \multicolumn{1}{c}{\bf LANGUAGE} \\
+\hline
+ARA & Arabic &    GRC  & Greek   &          PRT  & Portuguese \\
+BUL & Bulgarian &      HKG  &  Hong Kong Cantonese       &    RUS  & Russian \\
+CAT & Catalan &    IND  & Indian languages   &           SIN  & Singapore languages \\
+CHN & Chinese &    ITA  & Italian        &   SPA  & Spanish \\
+CZE & Czech &     JPN  & Japanese         &     SWE  & Swedish \\
+ENG & English &    KOR  & Korean         &   TEL  & Telugu \\
+FIL & Filipino &       NL  &  Dutch      &       THA &  Thai \\
+FIN & Finnish &    NOR &  Norwegian       &      TSW  & Tswana \\
+FRA & French &     PAK  & Urdu         &     TUR  & Turkish \\
+GER & German &     POL  & Polish    &        TWN  & Taiwanese
+\end{tabularx}
+\end{center}
+\end{table}
+
+One of the reasons that there are not many papers applying deep learning to ELL
+related problems is the lack of a sufficiently sized corpus. In order to collect
+enough data to make use of a deep neural network, I had to stitch together a
+number of freely available research corpora, as well as some privately held
+corpora provided by \href{http://turnitin.com/}{Turnitin (turnitin.com)}. To
+protect the privacy of the students, I will refer to the data sets from Turnitin
+as Private A, Private B, etc. They are all essays written online by students in
+6th-12th grade, as well as early college. Details of all 14 corpora are described
+in Table~\ref{data-table}. The L1 abbreviations are listed in Table~\ref{L1s-table}.
+
+\subsection{Data cleaning}
+
+\begin {table}
+\caption {Confounds}
+\label{table:confounds}
+\begin{center}
+%\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{X | X}
+Potential Confound & Mitigation \\
+\hline
+Formatting differences may cause the model to learn that an entire sub-dataset
+is native or ELL. &
+\begin{enumerate}
+    \item Use entirely separate data sets for train and test splits.
+    \item Restrict the formatting so that there is no repeated whitespace and
+    all characters fall between \textbackslash x32 (Space) and \textbackslash x126
+    (\texttildelow).
+\end{enumerate} \\
+\hline
+Prompt differences may cause the model to learn that an entire prompt is native
+or ELL. & \begin{enumerate}
+    \item Use entirely separate prompts for train, dev and test splits.
+    \item Make sure the prompts we do have that contain both ELL and native writing
+    are present in the test set.
+    \item Control for the contribution of the prompt in the model (add an explanatory
+    variable if using regression, add a secondary objective ala \cite{zhong}
+    if using a neural network, etc).
+\end{enumerate} \\
+\hline
+Native writers tend to write longer essays and longer sentences than ELL students.
+While ``write more'' is something we would want to encourage, it doesn't provide the
+kind of meaningful proficiency feedback we'd want to give. & Rather than using
+the full essay or even a particular sentence as an input, I will use sliding
+windows of $n=100$ characters and take either the average or the max of the predicted
+probabilities.
+\end{tabularx}
+\end{center}
+\end{table}
+
+Collecting data from such a varied set of corpora also presents its own challenges,
+however. There are many potential differences between data sets collected under
+different conditions and in different years/locations. In order to prevent the
+model from learning confounds that are unrelated to the proficiency of the writer,
+I cleaned the data as much as I was able to. Potential confounds and steps taken
+to mitigate the risk are presented in Table~\ref{table:confounds}.
+
+\subsection{Neural network description}
+
+\subsection{Modifications}
+
+
+\section{Experiments}
+
+train, dev, test split
+metric
+baseline
+abbreviations
+hyperparameters
+
+dev/test table
+
+one essay per model
+
+\section{Conclusion}
+
+\subsection{Analysis}
+Neural net is able to beat the simple baseline provided, but it does so by
+picking up on confounds in the data that are unrelated to the desired output
+of how similar is this section of text native writing
+
+
+\subsection{Future steps}
+Language model trained on large corpus of english
+
+Collecting large corpus of native/non-native writing on the same topic
+
+Collecting proficiency scores on the writing, rather than using L1 as
+a proxy.
+
+\subsection{Figures}
+
+All artwork must be neat, clean, and legible. Lines should be dark
+enough for purposes of reproduction; art work should not be
+hand-drawn. The figure number and caption always appear after the
+figure. Place one line space before the figure caption, and one line
+space after the figure. The figure caption is lower case (except for
+first word and proper nouns); figures are numbered consecutively.
+
+Make sure the figure caption does not get separated from the figure.
+Leave sufficient space to avoid splitting the figure and figure caption.
+
+You may use color figures.
+However, it is best for the
+figure captions and the paper body to make sense if the paper is printed
+either in black/white or in color.
+\begin{figure}[h]
+\begin{center}
+%\framebox[4.0in]{$\;$}
+\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+\end{center}
+\caption{Sample figure caption.}
+\end{figure}
+
+\subsection{Tables}
+
+All tables must be centered, neat, clean and legible. Do not use hand-drawn
+tables. The table number and title always appear before the table. See
+Table~\ref{sample-table}.
+
+Place one line space before the table title, one line space after the table
+title, and one line space after the table. The table title must be lower case
+(except for first word and proper nouns); tables are numbered consecutively.
+
+\begin{table}[t]
+\caption{Sample table title}
+\label{sample-table}
+\begin{center}
+\begin{tabular}{ll}
+\multicolumn{1}{c}{\bf PART}  &\multicolumn{1}{c}{\bf DESCRIPTION}
+\\ \hline \\
+Dendrite         &Input terminal \\
+Axon             &Output terminal \\
+Soma             &Cell body (contains cell nucleus) \\
+\end{tabular}
+\end{center}
+\end{table}
+
+\section{Final instructions}
+Do not change any aspects of the formatting parameters in the style files.
+In particular, do not modify the width or length of the rectangle the text
+should fit into, and do not change font sizes (except perhaps in the
+\textbf{References} section; see below). Please note that pages should be
+numbered.
+
+\section{Preparing PostScript or PDF files}
+
+Please prepare PostScript or PDF files with paper size ``US Letter'', and
+not, for example, ``A4''. The -t
+letter option on dvips will produce US Letter files.
+
+Fonts were the main cause of problems in the past years. Your PDF file must
+only contain Type 1 or Embedded TrueType fonts. Here are a few instructions
+to achieve this.
+
+\begin{itemize}
+
+\item You can check which fonts a PDF files uses.  In Acrobat Reader,
+select the menu Files$>$Document Properties$>$Fonts and select Show All Fonts. You can
+also use the program \verb+pdffonts+ which comes with \verb+xpdf+ and is
+available out-of-the-box on most Linux machines.
+
+\item The IEEE has recommendations for generating PDF files whose fonts
+are also acceptable for NIPS. Please see
+\url{http://www.emfield.org/icuwb2010/downloads/IEEE-PDF-SpecV32.pdf}
+
+\item LaTeX users:
+
+\begin{itemize}
+
+\item Consider directly generating PDF files using \verb+pdflatex+
+(especially if you are a MiKTeX user).
+PDF figures must be substituted for EPS figures, however.
+
+\item Otherwise, please generate your PostScript and PDF files with the following commands:
+\begin{verbatim}
+dvips mypaper.dvi -t letter -Ppdf -G0 -o mypaper.ps
+ps2pdf mypaper.ps mypaper.pdf
+\end{verbatim}
+
+Check that the PDF files only contains Type 1 fonts.
+%For the final version, please send us both the Postscript file and
+%the PDF file.
+
+\item xfig "patterned" shapes are implemented with
+bitmap fonts.  Use "solid" shapes instead.
+\item The \verb+\bbold+ package almost always uses bitmap
+fonts.  You can try the equivalent AMS Fonts with command
+\begin{verbatim}
+\usepackage[psamsfonts]{amssymb}
+\end{verbatim}
+ or use the following workaround for reals, natural and complex:
+\begin{verbatim}
+\newcommand{\RR}{I\!\!R} %real numbers
+\newcommand{\Nat}{I\!\!N} %natural numbers
+\newcommand{\CC}{I\!\!\!\!C} %complex numbers
+\end{verbatim}
+
+\item Sometimes the problematic fonts are used in figures
+included in LaTeX files. The ghostscript program \verb+eps2eps+ is the simplest
+way to clean such figures. For black and white figures, slightly better
+results can be achieved with program \verb+potrace+.
+\end{itemize}
+\item MSWord and Windows users (via PDF file):
+\begin{itemize}
+\item Install the Microsoft Save as PDF Office 2007 Add-in from
+\url{http://www.microsoft.com/downloads/details.aspx?displaylang=en\&familyid=4d951911-3e7e-4ae6-b059-a2e79ed87041}
+\item Select ``Save or Publish to PDF'' from the Office or File menu
+\end{itemize}
+\item MSWord and Mac OS X users (via PDF file):
+\begin{itemize}
+\item From the print menu, click the PDF drop-down box, and select ``Save
+as PDF...''
+\end{itemize}
+\item MSWord and Windows users (via PS file):
+\begin{itemize}
+\item To create a new printer
+on your computer, install the AdobePS printer driver and the Adobe Distiller PPD file from
+\url{http://www.adobe.com/support/downloads/detail.jsp?ftpID=204} {\it Note:} You must reboot your PC after installing the
+AdobePS driver for it to take effect.
+\item To produce the ps file, select ``Print'' from the MS app, choose
+the installed AdobePS printer, click on ``Properties'', click on ``Advanced.''
+\item Set ``TrueType Font'' to be ``Download as Softfont''
+\item Open the ``PostScript Options'' folder
+\item Select ``PostScript Output Option'' to be ``Optimize for Portability''
+\item Select ``TrueType Font Download Option'' to be ``Outline''
+\item Select ``Send PostScript Error Handler'' to be ``No''
+\item Click ``OK'' three times, print your file.
+\item Now, use Adobe Acrobat Distiller or ps2pdf to create a PDF file from
+the PS file. In Acrobat, check the option ``Embed all fonts'' if
+applicable.
+\end{itemize}
+
+\end{itemize}
+If your file contains Type 3 fonts or non embedded TrueType fonts, we will
+ask you to fix it.
+
+\subsection{Margins in LaTeX}
+
+Most of the margin problems come from figures positioned by hand using
+\verb+\special+ or other commands. We suggest using the command
+\verb+\includegraphics+
+from the graphicx package. Always specify the figure width as a multiple of
+the line width as in the example below using .eps graphics
+\begin{verbatim}
+   \usepackage[dvips]{graphicx} ...
+   \includegraphics[width=0.8\linewidth]{myfile.eps}
+\end{verbatim}
+or % Apr 2009 addition
+\begin{verbatim}
+   \usepackage[pdftex]{graphicx} ...
+   \includegraphics[width=0.8\linewidth]{myfile.pdf}
+\end{verbatim}
+for .pdf graphics.
+See section 4.4 in the graphics bundle documentation (\url{http://www.ctan.org/tex-archive/macros/latex/required/graphics/grfguide.ps})
+
+A number of width problems arise when LaTeX cannot properly hyphenate a
+line. Please give LaTeX hyphenation hints using the \verb+\-+ command.
+
+
+\subsubsection*{Acknowledgments}
+
+Use unnumbered third level headings for the acknowledgments. All
+acknowledgments go at the end of the paper. Do not include
+acknowledgments in the anonymized submission, only in the
+final paper.
+
+\begin{thebibliography}{6}
+
+\bibitem{baroni}
+    Baroni, Marco, and Silvia Bernardini.
+    "A new approach to the study of translationese: Machine-learning the difference
+    between original and translated text."
+    \emph{Literary and Linguistic Computing} 21.3 (2006): 259-274.
+
+\bibitem{chollampatt}
+    Chollampatt, Shamil, Kaveh Taghipour, and Hwee Tou Ng.
+    "Neural network translation models for grammatical error correction."
+    \emph{arXiv preprint} arXiv:1606.00189 (2016).
+
+\bibitem{goutte}
+    Goutte, Cyril, et al.
+    "Discriminating similar languages: Evaluations and explorations."
+    \emph{arXiv preprint} arXiv:1610.00031 (2016).
+
+\bibitem{liu}
+    Liu, Zhuoran, and Yang Liu.
+    "Exploiting Unlabeled Data for Neural Grammatical Error Detection."
+    \emph{arXiv preprint} arXiv:1611.08987 (2016).
+
+\bibitem{malmasi}
+    Malmasi, Shervin, Joel Tetreault, and Mark Dras.
+    "Oracle and human baselines for native language identification."
+    \emph{Proceedings of the Tenth Workshop on Innovative Use of NLP for Building
+    Educational Applications.} 2015.
+
+\bibitem{tomoyiko}
+    Tomokiyo, Laura Mayfield, and Rosie Jones.
+    "You're not from 'round here, are you?: naive Bayes detection of non-native utterance text."
+    {Proceedings of the second meeting of the North American Chapter of the Association
+    for Computational Linguistics on Language technologies.} Association for Computational Linguistics, 2001.
+
+\end{thebibliography}
+
+\end{document}

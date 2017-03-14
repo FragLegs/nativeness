@@ -14,7 +14,7 @@ import nativeness.utils.progress
 log = logging.getLogger(name=__name__)
 
 
-def main(input_path, results_path, serve, **kwargs):
+def main(input_path, results_path, serve, max_only, **kwargs):
     """
     Use the window preds to get intensities for each character and save it
     as HTML
@@ -27,6 +27,8 @@ def main(input_path, results_path, serve, **kwargs):
         Directory where the test results are located
     serve : bool
         Whether to open a server
+    max_only : bool
+        Only highlight the most ELL-like window
     **kwargs : keyword args
         ignored
     """
@@ -45,7 +47,9 @@ def main(input_path, results_path, serve, **kwargs):
     essays = nativeness.utils.data.load(essays_path)
 
     # create an html directory
-    html_path = os.path.join(results_path, 'html')
+    html_path = os.path.join(
+        results_path, 'html' + ('_max' if max_only else '')
+    )
 
     try:
         os.mkdir(html_path)
@@ -70,7 +74,12 @@ def main(input_path, results_path, serve, **kwargs):
 
         # calculate character intensities
         char_intensities = calculate_intensities(
-            window_preds[i], window_size, window_stride, used_max
+            preds=window_preds[i],
+            essay_length=len(row.text),
+            size=window_size,
+            stride=window_stride,
+            used_max=used_max,
+            max_only=max_only
         )
 
         title = '{}<br><br>non-native = {}<br>P(non-native) = {}'.format(
@@ -82,8 +91,8 @@ def main(input_path, results_path, serve, **kwargs):
             text=row.text,
             spans=char_intensities,
             title=title,
-            min_value=0.0,
-            max_value=1.0
+            # min_value=0.0,
+            # max_value=1.0
         )
 
         # save html
@@ -100,7 +109,12 @@ def main(input_path, results_path, serve, **kwargs):
         print('HTML written to {}'.format(html_path))
 
 
-def calculate_intensities(preds, size, stride, used_max):
+def calculate_intensities(preds,
+                          essay_length,
+                          size,
+                          stride,
+                          used_max,
+                          max_only):
     """
     Averages windows per character
 
@@ -108,6 +122,8 @@ def calculate_intensities(preds, size, stride, used_max):
     ----------
     preds : iterable of float
         The predictions for each window
+    essay_length : int
+        How long the text is
     size : int
         How big each window is
     stride : int
@@ -115,6 +131,8 @@ def calculate_intensities(preds, size, stride, used_max):
     used_max : bool
         If the model used the maximum window prediction, then we only want
         to visualize that window
+    max_only : bool
+        Only show the maximum window prediction
 
     Returns
     -------
@@ -122,11 +140,10 @@ def calculate_intensities(preds, size, stride, used_max):
         value = average prediction
         [(star_index, end_index, value), ...]
     """
-    essay_length = size + (len(preds) / stride) - 1
     values = np.zeros(essay_length, dtype=np.float)
     counts = np.zeros(essay_length, dtype=np.float)
 
-    if used_max:
+    if max_only:
         max_arg = np.argmax(preds)
         start = max_arg * stride
         values[start: start + size] = preds[max_arg]
@@ -134,9 +151,14 @@ def calculate_intensities(preds, size, stride, used_max):
         for i, pred in enumerate(preds):
             start = i * stride
             values[start: start + size] += pred
-            counts[start: start + size] += 1
+            counts[start: start + size] += 1.0
+
+        # because of the stride, not all characters get predictions
+        counts[counts == 0.0] += 1.0
 
         values = values / counts
+
+    assert not np.any(np.isnan(values)), (counts == 0.0).sum()
 
     return [(i, i + 1, v) for i, v in enumerate(values)]
 
@@ -202,6 +224,15 @@ def parse_args():
         '--serve',
         action='store_true',
         help=serve_help
+    )
+
+    max_only_help = (
+        'If this flag is present, only highlight the most ELL-like window'
+    )
+    parser.add_argument(
+        '--max-only',
+        action='store_true',
+        help=max_only_help
     )
 
     verbosity_help = 'Verbosity level (default: %(default)s)'

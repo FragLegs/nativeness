@@ -32,12 +32,12 @@ python scripts/run.py -m pool_max -v DEBUG
 Locations:
 /research/ella/nativeness/results/logistic_avg/20170310_041013
 /research/ella/nativeness/results/logistic_avg/20170310_054034
-/research/ella/nativeness/results/logistic_avg/20170310_141632
+/research/ella/nativeness/results/logistic_avg/20170310_141632 *
 /research/ella/nativeness/results/logistic_avg/20170310_172639
 
 
 /research/ella/nativeness/results/logistic_max/20170310_043045
-/research/ella/nativeness/results/logistic_max/20170310_054222
+/research/ella/nativeness/results/logistic_max/20170310_054222 *
 /research/ella/nativeness/results/logistic_max/20170310_172934
 
 
@@ -46,8 +46,23 @@ Locations:
 /research/ella/nativeness/results/pool_avg/20170310_160937
 /research/ella/nativeness/results/pool_avg/20170310_161200
 /research/ella/nativeness/results/pool_avg/20170311_213813
+/research/ella/nativeness/results/pool_avg/20170311_215945
+/research/ella/nativeness/results/pool_avg/20170311_220512
+/research/ella/nativeness/results/pool_avg/20170312_015610
+/research/ella/nativeness/results/pool_avg/20170312_020411
+/research/ella/nativeness/results/pool_avg/20170312_020611
+/research/ella/nativeness/results/pool_avg/20170312_020819
+/research/ella/nativeness/results/pool_avg/20170312_022034  *
+
+
+
 
 /research/ella/nativeness/results/pool_max/20170311_145946
+/research/ella/nativeness/results/pool_max/20170312_163547  *
+
+/research/ella/nativeness/results/prompt_avg/20170313_114716
+
+
 
 
 ~/src/bin/testTensorFlow

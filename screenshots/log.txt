@@ -1,0 +1,56 @@
+Recording results at /research/ella/nativeness/results/pool_avg/20170312_022034
+Random seed is 9272
+Saving the model configuration
+Training pool_avg model
+Loading data into memory. This may take a while.
+Loading data into memory. This may take a while.
+Building model with 82721 training and 4962 dev instances
+Building the model
+Epoch 0
+20000/20000 [==============================] - 3854s - loss: 0.4601  
+Predicting on dev
+4962/4962 [==============================] - 359s   
+New best AUC found! 0.77
+Saving model at /research/ella/nativeness/results/pool_avg/20170312_022034/model.weights
+Epoch 1
+20000/20000 [==============================] - 3849s - loss: 0.2965  
+Predicting on dev
+4962/4962 [==============================] - 355s   
+New best AUC found! 0.79
+Saving model at /research/ella/nativeness/results/pool_avg/20170312_022034/model.weights
+Epoch 2
+20000/20000 [==============================] - 3839s - loss: 0.2059  
+Predicting on dev
+4962/4962 [==============================] - 356s   
+New best AUC found! 0.82
+Saving model at /research/ella/nativeness/results/pool_avg/20170312_022034/model.weights
+Epoch 3
+20000/20000 [==============================] - 3846s - loss: 0.1707  
+Predicting on dev
+4962/4962 [==============================] - 358s   
+New best AUC found! 0.85
+Saving model at /research/ella/nativeness/results/pool_avg/20170312_022034/model.weights
+Epoch 4
+20000/20000 [==============================] - 3849s - loss: nan  
+Predicting on dev
+4962/4962 [==============================] - 356s   
+New best AUC found! 0.89
+Saving model at /research/ella/nativeness/results/pool_avg/20170312_022034/model.weights
+Epoch 5
+20000/20000 [==============================] - 3835s - loss: nan  
+Predicting on dev
+4962/4962 [==============================] - 357s   
+Not the best. 0.87
+Epoch 6
+20000/20000 [==============================] - 3834s - loss: nan  
+Predicting on dev
+4962/4962 [==============================] - 357s   
+New best AUC found! 0.89
+Saving model at /research/ella/nativeness/results/pool_avg/20170312_022034/model.weights
+Epoch 7
+20000/20000 [==============================] - 3850s - loss: nan  
+Predicting on dev
+4962/4962 [==============================] - 355s   
+New best AUC found! 0.89
+Saving model at /research/ella/nativeness/results/pool_avg/20170312_022034/model.weights
+Epoch 8

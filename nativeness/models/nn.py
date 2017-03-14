@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import operator
 import os
 
 import numpy as np
@@ -184,6 +185,21 @@ class NativeNN(NativenessModel):
         self.loss = self.add_loss_op(self.pred)
         self.train_op = self.add_training_op(self.loss)
         self.add_summaries()
+
+        log.debug('{} parameters'.format(self.count_parameters()))
+
+    def count_parameters(self):
+        """
+        Count the number of trainable parameters in the model
+
+        Returns
+        -------
+        int
+        """
+        return sum([
+            reduce(operator.mul, layer.get_shape().as_list())
+            for layer in tf.trainable_variables()
+        ])
 
     def add_summaries(self):
 

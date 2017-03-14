@@ -7,6 +7,8 @@ import cgi
 import logging
 import math
 
+import numpy as np
+
 log = logging.getLogger(name=__name__)
 
 
@@ -45,11 +47,13 @@ def html_heatmap(text,
     out = []
     out.append('<h3>{}</h3>'.format(title))
 
+    epsilon = 0.00001
+
     values = zip(*spans)[2]
     if min_value is None:
-        min_value = min(values)
+        min_value = min(values) - epsilon
     if max_value is None:
-        max_value = max(values)
+        max_value = max(values) + epsilon
 
     last_end = 0
     for start, end, value in spans:
@@ -58,6 +62,8 @@ def html_heatmap(text,
             out.append(border_text)
 
         heat = (value - min_value) / float(max_value - min_value)
+
+        assert not np.isnan(heat), value
 
         # lightness values less than 50% tend to be unreadable.
         lightness = 100 - int(50 * lens(heat))
