@@ -165,7 +165,8 @@ class WindowGenerator(object):
                  debug,
                  shuffle=False,
                  in_memory=False,
-                 loop=False):
+                 loop=False,
+                 featurizer=None):
         """
         Parameters
         ----------
@@ -184,6 +185,7 @@ class WindowGenerator(object):
             reduce randomness from reshuffling
         loop : bool, optional
             Whether to keep looping over the data or not
+        featurizer : obect that implements `transform()` on text
         """
         self.path = path
         self.window_size = window_size
@@ -192,26 +194,21 @@ class WindowGenerator(object):
         self.shuffle = shuffle
         self.in_memory = in_memory
         self.loop = loop
+        self.featurizer = featurizer
 
         # load the data into memory
         if self.in_memory:
             log.debug('Loading data into memory. This may take a while.')
 
             self._i = 0
-            self._data = [d for d in self._load_and_parse_data()]
+            self._data = [
+                d for d in self._load_and_parse_data()
+            ]
             self._size = len(self._data)
 
-    def __call__(self, no_windows=False, no_ints=False):
+    def __call__(self):
         """
         Yields essays represented as windows of character ints with labels
-
-        Parameters
-        ----------
-        no_windows : bool, optional
-            If True, don't make the windows
-
-        no_ints : bool, optional
-            If True, don't convert to ints (i.e. for Logistic)
 
         Yields
         -------
@@ -221,10 +218,6 @@ class WindowGenerator(object):
             - The prompt index (in case we need to control for it)
         """
         if self.in_memory:
-            if no_windows or no_ints:
-                raise ValueError(
-                    'Cannot use no_windows or no_ints with in_memory!'
-                )
             while True:  # loop forever
                 if self._i >= self._size:
                     # reset it
@@ -236,20 +229,12 @@ class WindowGenerator(object):
                 self._i += 1
 
         else:
-            for data in self._load_and_parse_data(no_windows, no_ints):
+            for data in self._load_and_parse_data():
                 yield data
 
-    def _load_and_parse_data(self, no_windows=False, no_ints=False):
+    def _load_and_parse_data(self):
         """
         Yields essays represented as windows of character ints with labels
-
-        Parameters
-        ----------
-        no_windows : bool, optional
-            If True, don't make the windows
-
-        no_ints : bool, optional
-            If True, don't convert to ints (i.e. for Logistic)
 
         Yields
         -------
@@ -272,20 +257,16 @@ class WindowGenerator(object):
             df = sklearn.utils.shuffle(df)
 
         for index, row in df.iterrows():
-            windows = None if no_windows else (
-                to_windows(
-                    row.text,
-                    size=self.window_size,
-                    stride=self.window_stride
-                ) if no_ints else
-                to_windows(
-                    to_ints(row.text),
-                    size=self.window_size,
-                    stride=self.window_stride
-                )
+            windows = to_windows(
+                to_ints(row.text) if self.featurizer is None else row.text,
+                size=self.window_size,
+                stride=self.window_stride
             )
             label = row.non_native
             prompt = row.prompt_index if has_prompt else None
+
+            if self.featurizer is not None:
+                windows = self.featurizer.transform(windows).toarray()
 
             yield windows, label, prompt
 
@@ -322,7 +303,8 @@ def train_generator(config):
         config.debug,
         shuffle=True,
         in_memory=config.in_memory,
-        loop=True
+        loop=True,
+        featurizer=config.featurizer
     )
 
 
@@ -335,7 +317,8 @@ def dev_generator(config):
         config.debug,
         shuffle=False,
         in_memory=config.in_memory,
-        loop=False
+        loop=False,
+        featurizer=config.featurizer
     )
 
 
@@ -348,7 +331,8 @@ def test_generator(config):
         config.debug,
         shuffle=False,
         in_memory=False,
-        loop=False
+        loop=False,
+        featurizer=config.featurizer
     )
 
 

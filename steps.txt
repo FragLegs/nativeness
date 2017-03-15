@@ -53,7 +53,7 @@ Locations:
 /research/ella/nativeness/results/pool_avg/20170312_020611
 /research/ella/nativeness/results/pool_avg/20170312_020819
 /research/ella/nativeness/results/pool_avg/20170312_022034  *
-
+/research/ella/nativeness/results/pool_avg/20170314_200044
 
 
 
@@ -61,6 +61,7 @@ Locations:
 /research/ella/nativeness/results/pool_max/20170312_163547  *
 
 /research/ella/nativeness/results/prompt_avg/20170313_114716
+/research/ella/nativeness/results/prompt_avg/20170314_034434*   (576)
 
 
 

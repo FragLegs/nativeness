@@ -6,33 +6,24 @@ import os
 import numpy as np
 
 import nativeness.models.base
-import nativeness.models.logistic
-import nativeness.models.majority
+import nativeness.models.logistic_nn
+import nativeness.models.pool
+import nativeness.models.prompt
 import nativeness.utils.data as data
 import nativeness.utils.metrics as metrics
 import nativeness.utils.progress
 
 
 log = logging.getLogger(name=__name__)
+
 MODEL_TYPES = {
-    'majority': nativeness.models.majority.Majority,
-    'logistic_avg': nativeness.models.logistic.LogisticAvg,
-    'logistic_max': nativeness.models.logistic.LogisticMax,
+    'pool_avg': nativeness.models.pool.BiLSTMPoolAvg,
+    'pool_max': nativeness.models.pool.BiLSTMPoolMax,
+    'prompt_avg': nativeness.models.prompt.PromptAwareAvg,
+    'prompt_max': nativeness.models.prompt.PromptAwareMax,
+    'logistic_avg': nativeness.models.logistic_nn.LogisticAvg,
+    'logistic_max': nativeness.models.logistic_nn.LogisticMax,
 }
-
-
-# allow instance to not have properly configured tensorflow (for logistic)
-try:
-    import nativeness.models.pool
-    import nativeness.models.prompt
-    MODEL_TYPES.update({
-        'pool_avg': nativeness.models.pool.BiLSTMPoolAvg,
-        'pool_max': nativeness.models.pool.BiLSTMPoolMax,
-        'prompt_avg': nativeness.models.prompt.PromptAwareAvg,
-        'prompt_max': nativeness.models.prompt.PromptAwareMax
-    })
-except:
-    print('Cannot load tensorflow')
 
 
 def main(**kwargs):

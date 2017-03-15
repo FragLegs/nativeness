@@ -333,20 +333,21 @@ class NativeNN(NativenessModel):
             writer = tf.summary.FileWriter(log_outputs, graph=graph)
 
             # add the vocab to the summary writer
-            vocab_path = os.path.join(log_outputs, 'vocabulary.tsv')
-            df = pd.DataFrame()
-            df['char'] = [
-                nativeness.utils.data.to_char(i)
-                for i in range(self.config.vocab_size)
-            ]
-            df.char = df.char.str.replace(' ', 'SP')  # easier to see
-            df['embedding_index'] = range(len(df))
-            df.to_csv(vocab_path, sep='\t', index=False)
-            projector_config = projector.ProjectorConfig()
-            embedding = projector_config.embeddings.add()
-            embedding.tensor_name = self.vocab.name
-            embedding.metadata_path = vocab_path
-            projector.visualize_embeddings(writer, projector_config)
+            if self.embeddings is not None:
+                vocab_path = os.path.join(log_outputs, 'vocabulary.tsv')
+                df = pd.DataFrame()
+                df['char'] = [
+                    nativeness.utils.data.to_char(i)
+                    for i in range(self.config.vocab_size)
+                ]
+                df.char = df.char.str.replace(' ', 'SP')  # easier to see
+                df['embedding_index'] = range(len(df))
+                df.to_csv(vocab_path, sep='\t', index=False)
+                projector_config = projector.ProjectorConfig()
+                embedding = projector_config.embeddings.add()
+                embedding.tensor_name = self.vocab.name
+                embedding.metadata_path = vocab_path
+                projector.visualize_embeddings(writer, projector_config)
 
             # set up a session
             session_config = (

@@ -5,6 +5,7 @@ import os
 import random
 
 import numpy as np
+from sklearn.feature_extraction.text import HashingVectorizer
 
 
 log = logging.getLogger(name=__name__)
@@ -25,6 +26,9 @@ class Config(object):
         self.window_stride = 5
 
         self.ngram_size = 4
+        self.ngram_params = 2**15
+        self.l2_lambda = 0.001
+
         self.max_essays_per_epoch = 20000
 
         self.random_seed = None
@@ -81,6 +85,17 @@ class Config(object):
         # set the random seed
         random.seed(self.random_seed)
         np.random.seed(self.random_seed)
+
+        self.featurizer = None
+        if 'logistic' in self.model_type:
+            log.debug('Using Hashing Vectorizer')
+            self.featurizer = HashingVectorizer(
+                analyzer=self.ngrams, n_features=self.ngram_params
+            )
+
+    def ngrams(self, window):
+        n = self.ngram_size
+        return [window[i:i + n] for i in range(len(window) - n + 1)]
 
 
 class NativenessModel(object):
