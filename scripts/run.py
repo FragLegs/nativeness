@@ -21,8 +21,8 @@ MODEL_TYPES = {
     'pool_max': nativeness.models.pool.BiLSTMPoolMax,
     'prompt_avg': nativeness.models.prompt.PromptAwareAvg,
     'prompt_max': nativeness.models.prompt.PromptAwareMax,
-    'logistic_avg': nativeness.models.logistic_nn.LogisticAvg,
-    'logistic_max': nativeness.models.logistic_nn.LogisticMax,
+    'logistic_nn_avg': nativeness.models.logistic_nn.LogisticAvg,
+    'logistic_nn_max': nativeness.models.logistic_nn.LogisticMax,
 }
 
 
