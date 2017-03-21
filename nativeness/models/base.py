@@ -27,7 +27,7 @@ class Config(object):
 
         self.ngram_size = 4
         self.ngram_params = 2**15
-        self.l2_lambda = 0.001
+        self.l2_lambda = 0.01
 
         self.max_essays_per_epoch = 20000
 

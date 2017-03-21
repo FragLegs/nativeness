@@ -1,18 +1,18 @@
 \BOOKMARK [1][-]{section.1}{Introduction}{}% 1
 \BOOKMARK [1][-]{section.2}{Related work}{}% 2
-\BOOKMARK [2][-]{subsection.2.1}{Task}{section.2}% 3
-\BOOKMARK [2][-]{subsection.2.2}{Model}{section.2}% 4
-\BOOKMARK [1][-]{section.3}{Approach}{}% 5
+\BOOKMARK [2][-]{subsection.2.1}{Similar tasks}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Similar models}{section.2}% 4
+\BOOKMARK [1][-]{section.3}{Data}{}% 5
 \BOOKMARK [2][-]{subsection.3.1}{Data collection}{section.3}% 6
 \BOOKMARK [2][-]{subsection.3.2}{Data cleaning}{section.3}% 7
-\BOOKMARK [2][-]{subsection.3.3}{Neural network description}{section.3}% 8
-\BOOKMARK [2][-]{subsection.3.4}{Modifications}{section.3}% 9
-\BOOKMARK [1][-]{section.4}{Experiments}{}% 10
-\BOOKMARK [1][-]{section.5}{Conclusion}{}% 11
-\BOOKMARK [2][-]{subsection.5.1}{Analysis}{section.5}% 12
-\BOOKMARK [2][-]{subsection.5.2}{Future steps}{section.5}% 13
-\BOOKMARK [2][-]{subsection.5.3}{Figures}{section.5}% 14
-\BOOKMARK [2][-]{subsection.5.4}{Tables}{section.5}% 15
-\BOOKMARK [1][-]{section.6}{Final instructions}{}% 16
-\BOOKMARK [1][-]{section.7}{Preparing PostScript or PDF files}{}% 17
-\BOOKMARK [2][-]{subsection.7.1}{Margins in LaTeX}{section.7}% 18
+\BOOKMARK [2][-]{subsection.3.3}{Data splits}{section.3}% 8
+\BOOKMARK [1][-]{section.4}{Models}{}% 9
+\BOOKMARK [2][-]{subsection.4.1}{Deep Filter}{section.4}% 10
+\BOOKMARK [2][-]{subsection.4.2}{Prompt Aware}{section.4}% 11
+\BOOKMARK [1][-]{section.5}{Experiments}{}% 12
+\BOOKMARK [1][-]{section.6}{Conclusion}{}% 13
+\BOOKMARK [2][-]{subsection.6.1}{Analysis}{section.6}% 14
+\BOOKMARK [2][-]{subsection.6.2}{Next steps}{section.6}% 15
+\BOOKMARK [1][-]{appendix.A}{Data}{}% 16
+\BOOKMARK [1][-]{appendix.B}{Essays}{}% 17
+\BOOKMARK [1][-]{appendix.C}{Windows}{}% 18

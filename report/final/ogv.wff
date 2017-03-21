@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<presets>
+  <OGV>
+    <label>Theora encoding with Vorbis sound</label>
+    <params>-c:v libtheora -qscale:v 6 -c:a libvorbis -qscale:a 5 </params>
+    <extension>ogv</extension>
+    <category>My Presets</category>
+  </OGV>
+</presets>

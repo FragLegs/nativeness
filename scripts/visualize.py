@@ -46,6 +46,11 @@ def main(input_path, results_path, serve, max_only, **kwargs):
     essays_path = os.path.join(results_path, 'test_preds.csv')
     essays = nativeness.utils.data.load(essays_path)
 
+    # load the config
+    config = nativeness.utils.data.load(
+        os.path.join(results_path, 'model.config'), as_type='pickle'
+    )
+
     # create an html directory
     html_path = os.path.join(
         results_path, 'html' + ('_max' if max_only else '')
@@ -82,8 +87,13 @@ def main(input_path, results_path, serve, max_only, **kwargs):
             max_only=max_only
         )
 
-        title = '{}<br><br>non-native = {}<br>P(non-native) = {}'.format(
-            row.uid, row.non_native, row.prediction
+        title = (
+            '{}<br><br>Is ELL? {}'
+            '<br>P(ELL) = {}'
+            '<br>Model: {}'
+        )
+        title = title.format(
+            row.uid, row.non_native, row.prediction, config.model_type
         )
 
         # generate html
@@ -143,20 +153,18 @@ def calculate_intensities(preds,
     values = np.zeros(essay_length, dtype=np.float)
     counts = np.zeros(essay_length, dtype=np.float)
 
-    if max_only:
-        max_arg = np.argmax(preds)
-        start = max_arg * stride
-        values[start: start + size] = preds[max_arg]
-    else:
-        for i, pred in enumerate(preds):
-            start = i * stride
-            values[start: start + size] += pred
-            counts[start: start + size] += 1.0
+    max_pred = np.max(preds)
+    for i, pred in enumerate(preds):
+        if max_only and pred < max_pred:
+            continue
+        start = i * stride
+        values[start: start + size] += pred
+        counts[start: start + size] += 1.0
 
-        # because of the stride, not all characters get predictions
-        counts[counts == 0.0] += 1.0
+    # because of the stride, not all characters get predictions
+    counts[counts == 0.0] += 1.0
 
-        values = values / counts
+    values = values / counts
 
     assert not np.any(np.isnan(values)), (counts == 0.0).sum()
 

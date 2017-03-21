@@ -13,6 +13,9 @@ python scripts/run.py -m logistic_avg -v DEBUG
 python scripts/run.py -m logistic_max -v DEBUG
 python scripts/run.py -m pool_avg -v DEBUG
 python scripts/run.py -m pool_max -v DEBUG
+python scripts/run.py -m prompt_avg -v DEBUG
+python scripts/run.py -m logistic_nn_avg -v DEBUG
+python scripts/run.py -m logistic_nn_max -v DEBUG
 
 7) Copy results location
 8) Ctrl-a d
@@ -52,19 +55,37 @@ Locations:
 /research/ella/nativeness/results/pool_avg/20170312_020411
 /research/ella/nativeness/results/pool_avg/20170312_020611
 /research/ella/nativeness/results/pool_avg/20170312_020819
-/research/ella/nativeness/results/pool_avg/20170312_022034  *
-/research/ella/nativeness/results/pool_avg/20170314_200044
+/research/ella/nativeness/results/pool_avg/20170312_022034
+/research/ella/nativeness/results/pool_avg/20170314_200044 * (576)
 
 
 
 /research/ella/nativeness/results/pool_max/20170311_145946
-/research/ella/nativeness/results/pool_max/20170312_163547  *
+/research/ella/nativeness/results/pool_max/20170312_163547
+/research/ella/nativeness/results/pool_max/20170315_135127 * (576)
+
 
 /research/ella/nativeness/results/prompt_avg/20170313_114716
 /research/ella/nativeness/results/prompt_avg/20170314_034434*   (576)
 
+/research/ella/nativeness/results/logistic_nn_avg/20170315_020320
+/research/ella/nativeness/results/logistic_nn_avg/20170315_020549
+/research/ella/nativeness/results/logistic_nn_avg/20170315_023129
+/research/ella/nativeness/results/logistic_nn_avg/20170315_024847 * (576)
 
 
+/research/ella/nativeness/results/logistic_nn_max/20170315_132419 * (576)
+
+/research/ella/nativeness/results/prompt_max/20170316_131749 * (576)
+
+
+Final
+/research/ella/nativeness/final_results/logistic_nn_avg/20170315_024847
+/research/ella/nativeness/final_results/logistic_nn_max/20170315_132419
+/research/ella/nativeness/final_results/pool_avg/20170314_200044
+/research/ella/nativeness/final_results/pool_max/20170315_135127
+/research/ella/nativeness/final_results/prompt_avg/20170314_034434
+/research/ella/nativeness/final_results/prompt_max/20170316_131749
 
 ~/src/bin/testTensorFlow
 
